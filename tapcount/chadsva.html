@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7">
+<title>CHA₂DS₂-VA</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { height: 100%; background: #f2f2f7; color: #1c1c1e; font-family: -apple-system, system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+
+  .header { padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 8px; flex-shrink: 0; }
+  .back-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #e5e5ea; border-radius: 9px; font-size: 18px; color: #1c1c1e; text-decoration: none; flex-shrink: 0; margin-bottom: 4px; }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header p  { font-size: 12px; color: #8e8e93; margin-top: 2px; }
+
+  /* Result */
+  .result-bar { flex-shrink: 0; margin: 4px 14px 6px; border-radius: 14px; padding: 13px 16px; display: flex; align-items: center; gap: 14px; background: #fff; border: 1.5px solid #e5e5ea; transition: background 300ms, border-color 300ms; }
+  .result-bar.none   { background: #eafaf1; border-color: #34c759; }
+  .result-bar.maybe  { background: #fffbea; border-color: #f59e0b; }
+  .result-bar.yes    { background: #fff2f2; border-color: #ff3b30; }
+  .score-circle { width: 52px; height: 52px; border-radius: 50%; background: #f2f2f7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 26px; font-weight: 300; font-variant-numeric: tabular-nums; color: #8e8e93; transition: background 300ms, color 300ms; }
+  .result-bar.none  .score-circle { background: #d4f7e0; color: #1a7a3a; }
+  .result-bar.maybe .score-circle { background: #fef3c7; color: #92400e; }
+  .result-bar.yes   .score-circle { background: #ffd6d4; color: #c0392b; }
+  .result-text { flex: 1; }
+  .result-label  { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #8e8e93; }
+  .result-bar.none  .result-label { color: #34c759; }
+  .result-bar.maybe .result-label { color: #d97706; }
+  .result-bar.yes   .result-label { color: #ff3b30; }
+  .result-action { font-size: 13px; color: #3a3a3c; margin-top: 3px; line-height: 1.4; }
+
+  /* Content */
+  .criteria { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 4px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .info-box { background: #e8f4fd; border: 1.5px solid #7ec8f5; border-radius: 12px; padding: 11px 14px; font-size: 12px; color: #1a4a6a; line-height: 1.5; }
+
+  .criterion { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; touch-action: pan-y; transition: background 120ms, border-color 120ms; }
+  .criterion.active { background: #eafaf1; border-color: #34c759; }
+
+  /* Age group — mutually exclusive, segmented */
+  .age-card { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 14px; padding: 13px 16px; }
+  .age-card-label { font-size: 14px; font-weight: 500; color: #1c1c1e; margin-bottom: 10px; }
+  .age-seg { display: flex; gap: 6px; }
+  .age-seg button { flex: 1; padding: 10px 4px; border-radius: 9px; border: 1.5px solid #e5e5ea; background: #f2f2f7; font-size: 12px; font-weight: 600; color: #8e8e93; cursor: pointer; font-family: inherit; transition: background 120ms, border-color 120ms, color 120ms; line-height: 1.3; }
+  .age-seg button.active { background: #eafaf1; border-color: #34c759; color: #1a7a3a; }
+
+  .check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c7c7cc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 120ms, border-color 120ms; }
+  .criterion.active .check { background: #34c759; border-color: #34c759; }
+  .check-mark { width: 10px; height: 7px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); opacity: 0; transition: opacity 120ms; }
+  .criterion.active .check-mark { opacity: 1; }
+
+  .crit-text { flex: 1; }
+  .crit-label  { font-size: 15px; color: #1c1c1e; font-weight: 500; line-height: 1.3; }
+  .crit-detail { font-size: 12px; color: #8e8e93; margin-top: 2px; }
+  .criterion.active .crit-detail { color: #2e7d4f; }
+  .crit-pts { font-size: 14px; font-weight: 700; color: #8e8e93; flex-shrink: 0; }
+  .criterion.active .crit-pts { color: #1a7a3a; }
+
+  .special-box { background: #fff8e1; border: 1.5px solid #f59e0b; border-radius: 12px; padding: 11px 14px; font-size: 12px; color: #78350f; line-height: 1.5; }
+
+  .bottom-bar { flex-shrink: 0; padding: 6px 14px 10px; }
+  .btn-reset { width: 100%; background: #fff; border: 1.5px solid #e5e5ea; color: #3a3a3c; border-radius: 11px; padding: 13px; font-size: 13px; font-family: inherit; cursor: pointer; }
+  .disclaimer { flex-shrink: 0; padding: 0 14px 8px; font-size: 10px; color: #aeaeb2; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="index.html">‹</a>
+  <h1>CHA₂DS₂-VA</h1>
+  <p>Strokerisk vid förmaksflimmer · ESC 2024 / AKO Skåne 2025</p>
+</div>
+
+<div class="result-bar" id="resultBar">
+  <div class="score-circle" id="scoreCircle">0</div>
+  <div class="result-text">
+    <div class="result-label" id="resultLabel">BOCKA AV KRITERIER</div>
+    <div class="result-action" id="resultAction">—</div>
+  </div>
+</div>
+
+<div class="criteria">
+
+  <div class="info-box">Icke-valvulärt förmaksflimmer · Poäng 0–9 · Kön ingår <strong>ej</strong> i ESC 2024</div>
+
+  <!-- Age — mutually exclusive -->
+  <div class="age-card">
+    <div class="age-card-label">Ålder</div>
+    <div class="age-seg">
+      <button data-age="u65" id="age-u65">&lt;65 år<br><span style="font-size:10px;font-weight:400">+0p</span></button>
+      <button data-age="65to74" id="age-65to74">65–74 år<br><span style="font-size:10px;font-weight:400">+1p</span></button>
+      <button data-age="o75" id="age-o75">≥75 år<br><span style="font-size:10px;font-weight:400">+2p</span></button>
+    </div>
+  </div>
+
+  <div class="criterion" data-id="C" data-score="1">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">C — Hjärtsvikt</div>
+      <div class="crit-detail">Symtom/tecken på hjärtsvikt eller nedsatt EF (HFrEF)</div>
+    </div>
+    <div class="crit-pts">+1</div>
+  </div>
+
+  <div class="criterion" data-id="H" data-score="1">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">H — Hypertoni</div>
+      <div class="crit-detail">BT >140/90 i vila vid 2 mätningar, eller antihypertensiv behandling</div>
+    </div>
+    <div class="crit-pts">+1</div>
+  </div>
+
+  <div class="criterion" data-id="D" data-score="1">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">D — Diabetes mellitus</div>
+      <div class="crit-detail">Fasteblodsockret >7 mmol/l eller antidiabetisk behandling</div>
+    </div>
+    <div class="crit-pts">+1</div>
+  </div>
+
+  <div class="criterion" data-id="S2" data-score="2">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">S₂ — Stroke / TIA / tromboembolism</div>
+      <div class="crit-detail">Tidigare verifierad händelse</div>
+    </div>
+    <div class="crit-pts">+2</div>
+  </div>
+
+  <div class="criterion" data-id="V" data-score="1">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">V — Vaskulär sjukdom</div>
+      <div class="crit-detail">Tidigare MI · PAVK · aortaplack</div>
+    </div>
+    <div class="crit-pts">+1</div>
+  </div>
+
+  <div class="special-box">⚠ Mitralisstenos · hypertrofisk kardiomyopati · hjärtamyloidos → antikoagulation oavsett poäng</div>
+
+</div>
+
+<div class="bottom-bar">
+  <button class="btn-reset" id="resetBtn">↺ Nollställ</button>
+</div>
+<div class="disclaimer">HAS-BLED ska ej avgöra om OAK sätts in · DOAK förstahandsval · ESC 2024 / AKO Skåne</div>
+
+<script>
+(function() {
+  let active = new Set();
+  let agePts = 0;
+  let ageSelected = false;
+
+  const scoreEl  = document.getElementById('scoreCircle');
+  const labelEl  = document.getElementById('resultLabel');
+  const actionEl = document.getElementById('resultAction');
+  const barEl    = document.getElementById('resultBar');
+
+  function update() {
+    let critPts = 0;
+    active.forEach(el => { critPts += parseInt(el.dataset.score); });
+    const total = critPts + agePts;
+    scoreEl.textContent = total;
+
+    if (!ageSelected && active.size === 0) {
+      barEl.className = 'result-bar';
+      labelEl.textContent = 'BOCKA AV KRITERIER';
+      actionEl.textContent = '—';
+      return;
+    }
+
+    if (total === 0) {
+      barEl.className = 'result-bar none';
+      labelEl.textContent = '0 POÄNG';
+      actionEl.textContent = 'OAK ej indicerat';
+    } else if (total === 1) {
+      barEl.className = 'result-bar maybe';
+      labelEl.textContent = '1 POÄNG';
+      actionEl.textContent = 'Överväg OAK — individuell bedömning · Ålder 65–74 väger tungt';
+    } else {
+      barEl.className = 'result-bar yes';
+      labelEl.textContent = total + ' POÄNG';
+      actionEl.textContent = 'OAK rekommenderas · DOAK förstahandsval';
+    }
+  }
+
+  // Age buttons — mutually exclusive
+  document.querySelectorAll('.age-seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.age-seg button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ageSelected = true;
+      const a = btn.dataset.age;
+      agePts = a === 'o75' ? 2 : a === '65to74' ? 1 : 0;
+      update();
+    });
+  });
+
+  // Criteria — scroll-safe tap
+  document.querySelectorAll('.criterion').forEach(el => {
+    let startY = 0, moved = false;
+    el.addEventListener('pointerdown', e => { startY = e.clientY; moved = false; }, { passive: true });
+    el.addEventListener('pointermove', e => { if (Math.abs(e.clientY - startY) > 10) moved = true; }, { passive: true });
+    el.addEventListener('pointerup', () => {
+      if (moved) return;
+      const id = el.dataset.id;
+      if (active.has(el)) { active.delete(el); el.classList.remove('active'); }
+      else               { active.add(el);    el.classList.add('active'); }
+      update();
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    active.clear(); agePts = 0; ageSelected = false;
+    document.querySelectorAll('.criterion').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.age-seg button').forEach(b => b.classList.remove('active'));
+    update();
+  });
+
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('dblclick', e => e.preventDefault());
+})();
+</script>
+</body>
+</html>

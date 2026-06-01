@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7">
+<title>Canadian C-Spine</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { height: 100%; background: #f2f2f7; color: #1c1c1e; font-family: -apple-system, system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+
+    .back-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #e5e5ea; border-radius: 9px; font-size: 18px; color: #1c1c1e; text-decoration: none; flex-shrink: 0; }
+  .header-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .back-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #e5e5ea; border-radius: 9px; font-size: 18px; color: #1c1c1e; text-decoration: none; flex-shrink: 0; margin-bottom: 4px; }
+  .header { padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 8px; flex-shrink: 0; }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header p  { font-size: 12px; color: #8e8e93; margin-top: 2px; }
+
+  .result-bar { flex-shrink: 0; margin: 4px 14px 6px; border-radius: 14px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #e5e5ea; transition: background 300ms, border-color 300ms; }
+  .result-bar.clear   { background: #eafaf1; border-color: #34c759; }
+  .result-bar.xray    { background: #fff2f2; border-color: #ff3b30; }
+  .result-bar.pending { background: #fffbea; border-color: #f59e0b; }
+  .result-dot { width: 40px; height: 40px; border-radius: 50%; background: #f2f2f7; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #8e8e93; transition: background 300ms, color 300ms; }
+  .result-bar.clear   .result-dot { background: #d4f7e0; color: #1a7a3a; }
+  .result-bar.xray    .result-dot { background: #ffd6d4; color: #c0392b; }
+  .result-bar.pending .result-dot { background: #fef3c7; color: #92400e; }
+  .result-text { flex: 1; }
+  .result-label  { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #8e8e93; }
+  .result-bar.clear   .result-label { color: #34c759; }
+  .result-bar.xray    .result-label { color: #ff3b30; }
+  .result-bar.pending .result-label { color: #d97706; }
+  .result-action { font-size: 13px; color: #3a3a3c; margin-top: 2px; line-height: 1.4; }
+
+  .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 4px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #8e8e93; padding: 4px 2px 0; }
+
+  .incl-box { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 7px; }
+  .incl-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #3a3a3c; cursor: pointer; padding: 2px 0; touch-action: pan-y; }
+  .incl-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c7c7cc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 120ms, border-color 120ms; }
+  .incl-check.on { background: #34c759; border-color: #34c759; }
+  .incl-mark { width: 8px; height: 6px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translate(1px, -1px); opacity: 0; transition: opacity 120ms; }
+  .incl-check.on .incl-mark { opacity: 1; }
+
+  .step { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 14px; transition: opacity 300ms; }
+  .step.locked { opacity: 0.35; }
+  .step.locked .criterion,
+  .step.locked .decision-btns button,
+  .step.locked .rot-btn { pointer-events: none; }
+  .step-header { padding: 11px 16px 9px; border-bottom: 1px solid #f2f2f7; }
+  .step-num   { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #8e8e93; margin-bottom: 1px; }
+  .step-title { font-size: 14px; font-weight: 600; color: #1c1c1e; }
+  .step-sub   { font-size: 11px; color: #8e8e93; margin-top: 1px; }
+  .step-body  { padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 6px; }
+
+  .criterion { background: #f9f9fb; border: 1.5px solid #e5e5ea; border-radius: 10px; padding: 11px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; touch-action: pan-y; transition: background 120ms, border-color 120ms; }
+  /* Step 1 criteria = red when active (high risk = bad) */
+  #step1 .criterion.active { background: #fff2f2; border-color: #ff3b30; }
+  #step1 .criterion.active .check { background: #ff3b30; border-color: #ff3b30; }
+  #step1 .criterion.active .crit-detail { color: #c0392b; }
+
+  /* Step 2 criteria = yellow when active (low risk = good) */
+  #step2 .criterion.active { background: #fffbea; border-color: #f59e0b; }
+  #step2 .criterion.active .check { background: #f59e0b; border-color: #f59e0b; }
+  #step2 .criterion.active .crit-detail { color: #92400e; }
+
+  .check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c7c7cc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 120ms, border-color 120ms; }
+  .check-mark { width: 10px; height: 7px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); opacity: 0; }
+  .criterion.active .check-mark { opacity: 1; }
+  .crit-label  { font-size: 14px; color: #1c1c1e; font-weight: 500; line-height: 1.3; flex: 1; }
+  .crit-detail { font-size: 11px; color: #8e8e93; margin-top: 2px; }
+
+  /* Decision buttons — Ja/Nej or Klarar/Klarar ej */
+  .decision-btns { display: flex; gap: 8px; padding: 8px 14px 12px; }
+  .decision-btns button { flex: 1; padding: 12px; border-radius: 10px; border: 1.5px solid #e5e5ea; background: #f9f9fb; font-size: 13px; font-weight: 600; color: #8e8e93; cursor: pointer; font-family: inherit; touch-action: pan-y; transition: background 120ms, border-color 120ms, color 120ms; }
+  .decision-btns button.yes.active { background: #eafaf1; border-color: #34c759; color: #1a7a3a; }
+  .decision-btns button.no.active  { background: #fff2f2; border-color: #ff3b30; color: #c0392b; }
+  #low-yes.active { background: #fffbea; border-color: #f59e0b; color: #92400e; }
+  #rot-yes.active { background: #eafaf1; border-color: #34c759; color: #1a7a3a; }
+
+  .bottom-bar { flex-shrink: 0; padding: 6px 14px 10px; }
+  #resetBtn { width: 100%; background: #fff; border: 1.5px solid #e5e5ea; color: #3a3a3c; border-radius: 11px; padding: 13px; font-size: 13px; font-family: inherit; cursor: pointer; }
+  .disclaimer { flex-shrink: 0; padding: 0 14px 8px; font-size: 10px; color: #aeaeb2; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="index.html">‹</a>
+  <h1>Canadian C-Spine Rule</h1>
+  <p>Halsryggtrauma hos alert, stabil vuxen · AKO Skåne jan 2025</p>
+</div>
+
+<div class="result-bar pending" id="resultBar">
+  <div class="result-dot" id="resultDot">?</div>
+  <div class="result-text">
+    <div class="result-label" id="resultLabel">BÖRJA MED INKLUSION</div>
+    <div class="result-action" id="resultAction">Bocka alla inklusionskriterier nedan</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="section-label">INKLUSIONSKRITERIER — alla måste stämma</div>
+  <div class="incl-box">
+    <div class="incl-item"><div class="incl-check" data-incl="1"><div class="incl-mark"></div></div>Ålder ≥16 år</div>
+    <div class="incl-item"><div class="incl-check" data-incl="2"><div class="incl-mark"></div></div>Trauma inom 48 timmar</div>
+    <div class="incl-item"><div class="incl-check" data-incl="3"><div class="incl-mark"></div></div>Stabil patient — normala vitalparametrar</div>
+    <div class="incl-item"><div class="incl-check" data-incl="4"><div class="incl-mark"></div></div>Ingen medvetandepåverkan</div>
+    <div class="incl-item"><div class="incl-check" data-incl="5"><div class="incl-mark"></div></div>Ingen tidigare rygg- eller kotsjukdom</div>
+    <div class="incl-item"><div class="incl-check" data-incl="6"><div class="incl-mark"></div></div>Ingen graviditet</div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="step locked" id="step1">
+    <div class="step-header">
+      <div class="step-num">STEG 1</div>
+      <div class="step-title">Högriskfaktorer</div>
+      <div class="step-sub">Finns någon av dessa?</div>
+    </div>
+    <div class="step-body">
+      <div class="criterion" data-step="1"><div class="check"><div class="check-mark"></div></div>
+        <div class="crit-label">Ålder &gt;65 år</div>
+      </div>
+      <div class="criterion" data-step="1"><div class="check"><div class="check-mark"></div></div>
+        <div class="crit-label">Fokalneurologi</div>
+        <div class="crit-detail">Domning eller svaghet i någon arm</div>
+      </div>
+      <div class="criterion" data-step="1"><div class="check"><div class="check-mark"></div></div>
+        <div class="crit-label">Farlig skademekanism</div>
+        <div class="crit-detail">Fall ≥1 m/≥5 trappsteg · axialt våld mot huvud inkl. dykning · trafikolycka ≥100 km/h / voltning / utslängd ur fordon · cykelolycka · motordrivet fritidsfordon</div>
+      </div>
+    </div>
+    <div class="decision-btns">
+      <button class="yes" id="high-none">Ingen högrisk</button>
+      <button class="no"  id="high-yes">Ja, finns högrisk</button>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step locked" id="step2">
+    <div class="step-header">
+      <div class="step-num">STEG 2</div>
+      <div class="step-title">Lågriskfaktorer</div>
+      <div class="step-sub">Nej till alla → RTG · Ja till någon → steg 3</div>
+    </div>
+    <div class="step-body">
+      <div class="criterion" data-step="2"><div class="check"><div class="check-mark"></div></div>
+        <div class="crit-label">Enkel påkörning bakifrån</div>
+        <div class="crit-detail">Ej krock med mötande · ej buss/lastbil · ej voltning · ej hög hastighet</div>
+      </div>
+      <div class="criterion" data-step="2"><div class="check"><div class="check-mark"></div></div>
+        <div class="crit-label">Uppesittande på akuten eller i väntrummet</div>
+      </div>
+      <div class="criterion" data-step="2"><div class="check"><div class="check-mark"></div></div>
+        <div class="crit-label">Uppegående efter olyckan</div>
+      </div>
+      <div class="criterion" data-step="2"><div class="check"><div class="check-mark"></div></div>
+        <div class="crit-label">Fördröjd smärtdebut</div>
+        <div class="crit-detail">Inte smärta omedelbart vid traumat</div>
+      </div>
+      <div class="criterion" data-step="2"><div class="check"><div class="check-mark"></div></div>
+        <div class="crit-label">Saknar ömhet i nackens medellinje</div>
+      </div>
+    </div>
+    <div class="decision-btns">
+      <button class="yes" id="low-yes">Ja, finns lågrisk</button>
+      <button class="no"  id="low-none">Ingen lågrisk → RTG</button>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step locked" id="step3">
+    <div class="step-header">
+      <div class="step-num">STEG 3</div>
+      <div class="step-title">Aktiv rotation av halsryggen</div>
+      <div class="step-sub">Be patienten rotera &gt;45° höger och vänster · oavsett smärta</div>
+    </div>
+    <div class="decision-btns">
+      <button class="yes" id="rot-yes">Klarar &gt;45°</button>
+      <button class="no"  id="rot-no">Klarar ej</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-bar"><button id="resetBtn">↺ Nollställ</button></div>
+<div class="disclaimer">Ej validerat för barn &lt;16 år · AKO Skåne januari 2025</div>
+
+<script>
+(function() {
+  const TOTAL_INCL = 6;
+  let inclChecked = new Set();
+  let highRisk    = null;  // null | 'none' | 'yes'
+  let lowRisk     = null;  // null | 'yes' | 'none'
+  let lowActive   = new Set();
+  let rotChoice   = null;
+
+  const barEl = document.getElementById('resultBar');
+  const dotEl = document.getElementById('resultDot');
+  const lblEl = document.getElementById('resultLabel');
+  const actEl = document.getElementById('resultAction');
+
+  function setResult(type, dot, label, action) {
+    barEl.className = 'result-bar ' + type;
+    dotEl.textContent = dot;
+    lblEl.textContent = label;
+    actEl.textContent = action;
+  }
+
+  function evaluate() {
+    const inclOk = inclChecked.size === TOTAL_INCL;
+
+    document.getElementById('step1').classList.toggle('locked', !inclOk);
+    document.getElementById('step2').classList.add('locked');
+    document.getElementById('step3').classList.add('locked');
+
+    if (!inclOk) {
+      setResult('pending', '?', 'BÖRJA MED INKLUSION', 'Bocka alla inklusionskriterier'); return;
+    }
+
+    if (highRisk === null) {
+      setResult('pending', '?', 'STEG 1 — HÖGRISK?', 'Bocka eventuella högriskfaktorer och välj nedan'); return;
+    }
+
+    if (highRisk === 'yes') {
+      setResult('xray', 'RTG', 'HÖGRISK · RTG INDICERAT', 'Överväg immobilisering av nacke · Remiss röntgen'); return;
+    }
+
+    // No high risk — unlock step 2
+    document.getElementById('step2').classList.remove('locked');
+
+    if (lowRisk === null) {
+      setResult('pending', '?', 'STEG 2 — LÅGRISK?', 'Bocka eventuella lågriskfaktorer och välj nedan'); return;
+    }
+
+    if (lowRisk === 'none') {
+      setResult('xray', 'RTG', 'INGEN LÅGRISK · RTG INDICERAT', 'Remiss röntgen'); return;
+    }
+
+    // Has low risk → unlock step 3
+    document.getElementById('step3').classList.remove('locked');
+
+    if (rotChoice === null) {
+      setResult('pending', '?', 'STEG 3 — ROTATION', 'Be patienten rotera >45° åt vardera håll'); return;
+    }
+
+    if (rotChoice === 'yes') {
+      setResult('clear', 'OK', 'INGEN RÖNTGEN', 'Halsryggsskada osannolik · Ingen röntgen indicerad');
+    } else {
+      setResult('xray', 'RTG', 'KAN EJ ROTERA · RTG INDICERAT', 'Remiss röntgen');
+    }
+  }
+
+  // ── Scroll-safe tap — 12px threshold ──
+  function addTap(el, fn) {
+    let startY = 0, startX = 0, moved = false;
+    el.addEventListener('pointerdown', e => {
+      startY = e.clientY; startX = e.clientX; moved = false;
+    }, { passive: true });
+    el.addEventListener('pointermove', e => {
+      if (Math.abs(e.clientY - startY) > 12 || Math.abs(e.clientX - startX) > 12) moved = true;
+    }, { passive: true });
+    el.addEventListener('pointerup', () => { if (!moved) fn(); });
+  }
+
+  // Inclusion rows — whole row tappable
+  document.querySelectorAll('.incl-item').forEach(el => {
+    addTap(el, () => {
+      const check = el.querySelector('.incl-check');
+      check.classList.toggle('on');
+      if (check.classList.contains('on')) inclChecked.add(check.dataset.incl);
+      else inclChecked.delete(check.dataset.incl);
+      resetSteps(); evaluate();
+    });
+  });
+
+  function resetSteps() {
+    highRisk = null; lowRisk = null; lowActive.clear(); rotChoice = null;
+    document.querySelectorAll('[data-step]').forEach(e => e.classList.remove('active'));
+    ['high-none','high-yes','low-yes','low-none','rot-yes','rot-no'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    });
+  }
+
+  // Step 1 criteria — tapping directly sets highRisk yes and evaluates
+  document.querySelectorAll('[data-step="1"]').forEach(el => {
+    addTap(el, () => {
+      // Toggle this criterion
+      if (el.classList.contains('active')) {
+        el.classList.remove('active');
+        // If no others active, revert to null
+        const anyActive = document.querySelectorAll('[data-step="1"].active').length > 0;
+        if (!anyActive) {
+          highRisk = null;
+          document.getElementById('high-yes').classList.remove('active');
+        }
+      } else {
+        el.classList.add('active');
+        highRisk = 'yes';
+        document.getElementById('high-yes').classList.add('active');
+        document.getElementById('high-none').classList.remove('active');
+      }
+      evaluate();
+    });
+  });
+
+  addTap(document.getElementById('high-none'), () => {
+    highRisk = 'none';
+    document.getElementById('high-none').classList.add('active');
+    document.getElementById('high-yes').classList.remove('active');
+    document.querySelectorAll('[data-step="1"]').forEach(e => e.classList.remove('active'));
+    lowRisk = null; lowActive.clear(); rotChoice = null;
+    document.querySelectorAll('[data-step="2"]').forEach(e => e.classList.remove('active'));
+    ['low-yes','low-none','rot-yes','rot-no'].forEach(id => document.getElementById(id).classList.remove('active'));
+    evaluate();
+  });
+
+  addTap(document.getElementById('high-yes'), () => {
+    highRisk = 'yes';
+    document.getElementById('high-yes').classList.add('active');
+    document.getElementById('high-none').classList.remove('active');
+    evaluate();
+  });
+
+  // Step 2 criteria — tapping directly sets lowRisk yes
+  document.querySelectorAll('[data-step="2"]').forEach(el => {
+    addTap(el, () => {
+      if (el.classList.contains('active')) {
+        el.classList.remove('active');
+        const anyActive = document.querySelectorAll('[data-step="2"].active').length > 0;
+        if (!anyActive) {
+          lowRisk = null;
+          document.getElementById('low-yes').classList.remove('active');
+          rotChoice = null;
+          document.getElementById('rot-yes').classList.remove('active');
+          document.getElementById('rot-no').classList.remove('active');
+        }
+      } else {
+        el.classList.add('active');
+        lowRisk = 'yes';
+        document.getElementById('low-yes').classList.add('active');
+        document.getElementById('low-none').classList.remove('active');
+      }
+      evaluate();
+    });
+  });
+
+  addTap(document.getElementById('low-yes'), () => {
+    lowRisk = 'yes';
+    document.getElementById('low-yes').classList.add('active');
+    document.getElementById('low-none').classList.remove('active');
+    rotChoice = null;
+    document.getElementById('rot-yes').classList.remove('active');
+    document.getElementById('rot-no').classList.remove('active');
+    evaluate();
+  });
+
+  addTap(document.getElementById('low-none'), () => {
+    lowRisk = 'none';
+    document.getElementById('low-none').classList.add('active');
+    document.getElementById('low-yes').classList.remove('active');
+    document.querySelectorAll('[data-step="2"]').forEach(e => e.classList.remove('active'));
+    lowActive.clear();
+    evaluate();
+  });
+
+  // Step 3
+  addTap(document.getElementById('rot-yes'), () => {
+    rotChoice = 'yes';
+    document.getElementById('rot-yes').classList.add('active');
+    document.getElementById('rot-no').classList.remove('active');
+    evaluate();
+  });
+
+  addTap(document.getElementById('rot-no'), () => {
+    rotChoice = 'no';
+    document.getElementById('rot-no').classList.add('active');
+    document.getElementById('rot-yes').classList.remove('active');
+    evaluate();
+  });
+
+  addTap(document.getElementById('resetBtn'), () => {
+    inclChecked.clear();
+    document.querySelectorAll('.incl-check').forEach(e => e.classList.remove('on'));
+    resetSteps(); evaluate();
+  });
+
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('dblclick', e => e.preventDefault());
+  evaluate();
+})();
+</script>
+</body>
+</html>

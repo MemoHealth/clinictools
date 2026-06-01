@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7">
+<title>Wells / PERC</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { height: 100%; background: #f2f2f7; color: #1c1c1e; font-family: -apple-system, system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+
+  .back-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #e5e5ea; border-radius: 9px; font-size: 18px; color: #1c1c1e; text-decoration: none; flex-shrink: 0; margin-bottom: 4px; }
+  .tab-bar { flex-shrink: 0; padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 0; }
+  .tab-bar h1 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .tabs { display: flex; background: #e5e5ea; border-radius: 10px; padding: 2px; gap: 2px; }
+  .tab { flex: 1; text-align: center; padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #8e8e93; cursor: pointer; transition: background 150ms, color 150ms; line-height: 1.3; }
+  .tab.active { background: #fff; color: #1c1c1e; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+  .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .panel.active { display: flex; }
+
+  .result-bar { flex-shrink: 0; margin: 6px 14px 4px; border-radius: 14px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #e5e5ea; transition: background 300ms, border-color 300ms; }
+  .result-bar.green  { background: #eafaf1; border-color: #34c759; }
+  .result-bar.yellow { background: #fffbea; border-color: #f59e0b; }
+  .result-bar.red    { background: #fff2f2; border-color: #ff3b30; }
+  .result-bar.clear  { background: #eafaf1; border-color: #34c759; }
+  .result-bar.stop   { background: #fff2f2; border-color: #ff3b30; }
+  .score-circle { width: 44px; height: 44px; border-radius: 50%; background: #f2f2f7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; font-weight: 300; font-variant-numeric: tabular-nums; color: #8e8e93; transition: background 300ms, color 300ms; }
+  .result-bar.green  .score-circle { background: #d4f7e0; color: #1a7a3a; }
+  .result-bar.yellow .score-circle { background: #fef3c7; color: #92400e; }
+  .result-bar.red    .score-circle { background: #ffd6d4; color: #c0392b; }
+  .result-bar.clear  .score-circle { background: #d4f7e0; color: #1a7a3a; font-size: 16px; }
+  .result-bar.stop   .score-circle { background: #ffd6d4; color: #c0392b; font-size: 16px; }
+  .result-text { flex: 1; }
+  .result-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #8e8e93; }
+  .result-bar.green  .result-label { color: #34c759; }
+  .result-bar.yellow .result-label { color: #d97706; }
+  .result-bar.red    .result-label { color: #ff3b30; }
+  .result-bar.clear  .result-label { color: #34c759; }
+  .result-bar.stop   .result-label { color: #ff3b30; }
+  .result-action { font-size: 13px; color: #3a3a3c; margin-top: 3px; line-height: 1.4; }
+
+  .criteria { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 4px 14px 8px; display: flex; flex-direction: column; gap: 8px; }
+  .info-box { background: #e8f4fd; border: 1.5px solid #7ec8f5; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #1a4a6a; line-height: 1.5; }
+
+  .criterion { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; touch-action: pan-y; transition: background 120ms, border-color 120ms; }
+  .criterion.active     { background: #eafaf1; border-color: #34c759; }
+  .criterion.active-neg { background: #fff2f2; border-color: #ff3b30; }
+  .check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c7c7cc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 120ms, border-color 120ms; }
+  .criterion.active     .check { background: #34c759; border-color: #34c759; }
+  .criterion.active-neg .check { background: #ff3b30; border-color: #ff3b30; }
+  .check-mark { width: 10px; height: 7px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); opacity: 0; transition: opacity 120ms; }
+  .criterion.active .check-mark, .criterion.active-neg .check-mark { opacity: 1; }
+  .crit-label  { font-size: 14px; color: #1c1c1e; font-weight: 500; line-height: 1.3; flex: 1; }
+  .crit-detail { font-size: 11px; color: #8e8e93; margin-top: 2px; }
+  .crit-pts { font-size: 13px; font-weight: 700; color: #8e8e93; flex-shrink: 0; min-width: 32px; text-align: right; }
+  .criterion.active .crit-pts { color: #1a7a3a; }
+
+  .bottom-bar { flex-shrink: 0; padding: 6px 14px 10px; }
+  .btn-reset { width: 100%; background: #fff; border: 1.5px solid #e5e5ea; color: #3a3a3c; border-radius: 11px; padding: 13px; font-size: 13px; font-family: inherit; cursor: pointer; }
+  .disclaimer { flex-shrink: 0; padding: 0 14px 8px; font-size: 10px; color: #aeaeb2; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <a class="back-btn" href="index.html">‹</a>
+  <h1>Wells / PERC</h1>
+  <div class="tabs">
+    <div class="tab active" data-tab="dvt">DVT</div>
+    <div class="tab" data-tab="perc">PERC<br>(LE)</div>
+    <div class="tab" data-tab="le">Wells<br>(LE)</div>
+  </div>
+</div>
+
+<!-- DVT -->
+<div class="panel active" id="panel-dvt">
+  <div class="result-bar" id="dvt-result">
+    <div class="score-circle" id="dvt-score">0</div>
+    <div class="result-text">
+      <div class="result-label" id="dvt-label">BOCKA AV KRITERIER</div>
+      <div class="result-action" id="dvt-action">—</div>
+    </div>
+  </div>
+  <div class="criteria">
+    <div class="info-box">Wells DVT · 0–1p: osannolik → D-dimer · ≥2p: sannolik → akut UL<br><span style="font-size:11px;opacity:.8">Ej validerat vid graviditet eller p-piller/östrogen</span></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Aktiv malignitet</div><div class="crit-detail">Behandling pågående, senaste 6 mån, eller palliation</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Paralys, pares eller gipsad nedre extremitet</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Sängliggande &gt;3 dagar eller kirurgi senaste 4 v</div><div class="crit-detail">Kirurgi som krävde narkos</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Ömhet längs djupa vensystemet</div><div class="crit-detail">Lokaliserad ömhet vid palpation</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Svullnad av hela benet</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Vadomfång &gt;3 cm jämfört med asymtomatiskt ben</div><div class="crit-detail">Mäts 10 cm nedom tibiakondylen</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Pittingödem — symtomatiskt ben</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Kollaterala ytliga vener (ej varicer)</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Tidigare verifierad DVT</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="-2" data-neg="true"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Alternativ diagnos minst lika sannolik</div><div class="crit-detail">T.ex. muskelskada, ytlig tromboflebit, Baker-cysta</div></div><div class="crit-pts">−2</div></div>
+  </div>
+  <div class="bottom-bar"><button class="btn-reset" data-panel="dvt">↺ Nollställ</button></div>
+  <div class="disclaimer">AKO Skåne · Ej validerat vid graviditet / östrogen</div>
+</div>
+
+<!-- PERC -->
+<div class="panel" id="panel-perc">
+  <div class="result-bar" id="perc-result">
+    <div class="score-circle" id="perc-score">0/8</div>
+    <div class="result-text">
+      <div class="result-label" id="perc-label">BOCKA AV KRITERIER</div>
+      <div class="result-action" id="perc-action">—</div>
+    </div>
+  </div>
+  <div class="criteria">
+    <div class="info-box">Alla 8 måste vara uppfyllda för att utesluta LE utan D-dimer. Används vid låg förhandsmisstanke.<br><span style="font-size:11px;opacity:.8">Bocka det som STÄMMER på patienten</span></div>
+    <div class="criterion" data-perc="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Ålder &lt;50 år</div></div></div>
+    <div class="criterion" data-perc="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Puls &lt;100/min</div></div></div>
+    <div class="criterion" data-perc="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Saturation ≥95 %</div><div class="crit-detail">På luften</div></div></div>
+    <div class="criterion" data-perc="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Ingen hemoptys</div></div></div>
+    <div class="criterion" data-perc="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Ingen östrogenbehandling</div><div class="crit-detail">P-piller, HRT eller graviditet</div></div></div>
+    <div class="criterion" data-perc="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Ingen tidigare DVT eller LE</div></div></div>
+    <div class="criterion" data-perc="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Ingen unilateral bensvullnad</div></div></div>
+    <div class="criterion" data-perc="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Ingen operation/trauma senaste 4 v</div><div class="crit-detail">Som krävde sjukhusvård</div></div></div>
+  </div>
+  <div class="bottom-bar"><button class="btn-reset" data-panel="perc">↺ Nollställ</button></div>
+  <div class="disclaimer">Kräver låg klinisk förhandsmisstanke · Viss.nu / Praktisk Medicin</div>
+</div>
+
+<!-- Wells LE -->
+<div class="panel" id="panel-le">
+  <div class="result-bar" id="le-result">
+    <div class="score-circle" id="le-score">0</div>
+    <div class="result-text">
+      <div class="result-label" id="le-label">BOCKA AV KRITERIER</div>
+      <div class="result-action" id="le-action">—</div>
+    </div>
+  </div>
+  <div class="criteria">
+    <div class="info-box">Wells LE · ≤4p: osannolik → D-dimer · &gt;4p: sannolik → DTLA<br><span style="font-size:11px;opacity:.8">Ej validerat vid graviditet eller p-piller/östrogen</span></div>
+    <div class="criterion" data-score="3"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Kliniska tecken på DVT</div><div class="crit-detail">Bensvullnad + ömhet vid palpation av djupa vener</div></div><div class="crit-pts">+3</div></div>
+    <div class="criterion" data-score="3"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">LE mer sannolik än alternativ diagnos</div><div class="crit-detail">Klinisk helhetsbedömning</div></div><div class="crit-pts">+3</div></div>
+    <div class="criterion" data-score="1.5"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Takykardi &gt;100/min</div></div><div class="crit-pts">+1.5</div></div>
+    <div class="criterion" data-score="1.5"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Immobilisering &gt;3 dagar eller kirurgi senaste 4 v</div><div class="crit-detail">Kirurgi som krävde narkos</div></div><div class="crit-pts">+1.5</div></div>
+    <div class="criterion" data-score="1.5"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Tidigare verifierad DVT eller LE</div></div><div class="crit-pts">+1.5</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Hemoptys</div></div><div class="crit-pts">+1</div></div>
+    <div class="criterion" data-score="1"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Aktiv malignitet</div><div class="crit-detail">Behandling senaste 6 mån eller palliation</div></div><div class="crit-pts">+1</div></div>
+  </div>
+  <div class="bottom-bar"><button class="btn-reset" data-panel="le">↺ Nollställ</button></div>
+  <div class="disclaimer">AKO Skåne · Ej validerat vid graviditet / östrogen</div>
+</div>
+
+<script>
+(function() {
+  function addTap(el, fn) {
+    let startY = 0, moved = false;
+    el.addEventListener('pointerdown', e => { startY = e.clientY; moved = false; }, { passive: true });
+    el.addEventListener('pointermove', e => { if (Math.abs(e.clientY - startY) > 10) moved = true; }, { passive: true });
+    el.addEventListener('pointerup', () => { if (!moved) fn(); });
+  }
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // DVT
+  (function() {
+    let active = new Set();
+    const scoreEl  = document.getElementById('dvt-score');
+    const labelEl  = document.getElementById('dvt-label');
+    const actionEl = document.getElementById('dvt-action');
+    const barEl    = document.getElementById('dvt-result');
+
+    function update() {
+      let score = 0;
+      active.forEach(el => { score += parseFloat(el.dataset.score); });
+      scoreEl.textContent = score % 1 === 0 ? score : score.toFixed(1);
+      if (active.size === 0) {
+        barEl.className = 'result-bar'; labelEl.textContent = 'BOCKA AV KRITERIER'; actionEl.textContent = '—'; return;
+      }
+      if (score <= 1) {
+        barEl.className = 'result-bar green';
+        labelEl.textContent = score + 'p · OSANNOLIK';
+        actionEl.textContent = 'DVT osannolik · Ta D-dimer om symtom <1 vecka';
+      } else {
+        barEl.className = 'result-bar red';
+        labelEl.textContent = score + 'p · SANNOLIK';
+        actionEl.innerHTML = 'DVT sannolik · Remiss akut ultraljud<br><span style="color:#8e8e93;font-size:12px">Vid fördröjt UL: överväg antikoagulantia i väntan</span>';
+      }
+    }
+
+    document.querySelectorAll('#panel-dvt .criterion').forEach(el => {
+      addTap(el, () => {
+        if (active.has(el)) { active.delete(el); el.classList.remove('active', 'active-neg'); }
+        else { active.add(el); el.classList.add(el.dataset.neg ? 'active-neg' : 'active'); }
+        update();
+      });
+    });
+    document.querySelector('[data-panel="dvt"]').addEventListener('click', () => {
+      active.clear();
+      document.querySelectorAll('#panel-dvt .criterion').forEach(e => e.classList.remove('active', 'active-neg'));
+      update();
+    });
+  })();
+
+  // PERC
+  (function() {
+    let checked = new Set();
+    const scoreEl  = document.getElementById('perc-score');
+    const labelEl  = document.getElementById('perc-label');
+    const actionEl = document.getElementById('perc-action');
+    const barEl    = document.getElementById('perc-result');
+    const TOTAL = 8;
+
+    function update() {
+      const n = checked.size;
+      scoreEl.textContent = n + '/' + TOTAL;
+      if (n === 0) { barEl.className = 'result-bar'; labelEl.textContent = 'BOCKA AV KRITERIER'; actionEl.textContent = '—'; return; }
+      if (n === TOTAL) {
+        barEl.className = 'result-bar clear'; labelEl.textContent = 'ALLA 8 UPPFYLLDA';
+        actionEl.textContent = 'LE kan uteslutas utan D-dimer (vid låg förhandsmisstanke)';
+      } else {
+        barEl.className = 'result-bar stop'; labelEl.textContent = n + '/8 UPPFYLLDA';
+        actionEl.textContent = 'PERC ej uppfyllt · Gå vidare med Wells LE + D-dimer';
+      }
+    }
+
+    document.querySelectorAll('#panel-perc .criterion').forEach(el => {
+      addTap(el, () => {
+        if (checked.has(el)) { checked.delete(el); el.classList.remove('active'); }
+        else { checked.add(el); el.classList.add('active'); }
+        update();
+      });
+    });
+    document.querySelector('[data-panel="perc"]').addEventListener('click', () => {
+      checked.clear();
+      document.querySelectorAll('#panel-perc .criterion').forEach(e => e.classList.remove('active'));
+      update();
+    });
+  })();
+
+  // Wells LE
+  (function() {
+    let active = new Set();
+    const scoreEl  = document.getElementById('le-score');
+    const labelEl  = document.getElementById('le-label');
+    const actionEl = document.getElementById('le-action');
+    const barEl    = document.getElementById('le-result');
+
+    function update() {
+      let score = 0;
+      active.forEach(el => { score += parseFloat(el.dataset.score); });
+      scoreEl.textContent = score % 1 === 0 ? score : score.toFixed(1);
+      if (active.size === 0) { barEl.className = 'result-bar'; labelEl.textContent = 'BOCKA AV KRITERIER'; actionEl.textContent = '—'; return; }
+      if (score <= 4) {
+        barEl.className = 'result-bar green'; labelEl.textContent = score + 'p · OSANNOLIK'; actionEl.textContent = 'LE osannolik · Ta D-dimer';
+      } else {
+        barEl.className = 'result-bar red'; labelEl.textContent = score + 'p · SANNOLIK'; actionEl.textContent = 'LE sannolik · Remiss DTLA';
+      }
+    }
+
+    document.querySelectorAll('#panel-le .criterion').forEach(el => {
+      addTap(el, () => {
+        if (active.has(el)) { active.delete(el); el.classList.remove('active'); }
+        else { active.add(el); el.classList.add('active'); }
+        update();
+      });
+    });
+    document.querySelector('[data-panel="le"]').addEventListener('click', () => {
+      active.clear();
+      document.querySelectorAll('#panel-le .criterion').forEach(e => e.classList.remove('active'));
+      update();
+    });
+  })();
+
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('dblclick', e => e.preventDefault());
+})();
+</script>
+</body>
+</html>

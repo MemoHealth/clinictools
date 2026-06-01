@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7">
+<title>Ottawa Rules</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { height: 100%; background: #f2f2f7; color: #1c1c1e; font-family: -apple-system, system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+
+  .back-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #e5e5ea; border-radius: 9px; font-size: 18px; color: #1c1c1e; text-decoration: none; flex-shrink: 0; margin-bottom: 4px; }
+  .tab-bar { flex-shrink: 0; padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 0; }
+  .tab-bar h1 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .tabs { display: flex; background: #e5e5ea; border-radius: 10px; padding: 2px; gap: 2px; }
+  .tab { flex: 1; text-align: center; padding: 9px 4px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #8e8e93; cursor: pointer; transition: background 150ms, color 150ms; }
+  .tab.active { background: #fff; color: #1c1c1e; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+  .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .panel.active { display: flex; }
+
+  .result-bar { flex-shrink: 0; margin: 6px 14px 4px; border-radius: 14px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #e5e5ea; transition: background 300ms, border-color 300ms; }
+  .result-bar.clear { background: #eafaf1; border-color: #34c759; }
+  .result-bar.xray  { background: #fff2f2; border-color: #ff3b30; }
+  .result-icon { width: 44px; height: 44px; border-radius: 50%; background: #f2f2f7; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #8e8e93; transition: background 300ms, color 300ms; }
+  .result-bar.clear .result-icon { background: #d4f7e0; color: #1a7a3a; }
+  .result-bar.xray  .result-icon { background: #ffd6d4; color: #c0392b; }
+  .result-text { flex: 1; }
+  .result-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #8e8e93; }
+  .result-bar.clear .result-label { color: #34c759; }
+  .result-bar.xray  .result-label { color: #ff3b30; }
+  .result-action { font-size: 13px; color: #3a3a3c; margin-top: 3px; line-height: 1.4; }
+
+  .criteria { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 4px 14px 8px; display: flex; flex-direction: column; gap: 8px; }
+  .info-box { background: #e8f4fd; border: 1.5px solid #7ec8f5; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #1a4a6a; line-height: 1.5; }
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #8e8e93; padding: 4px 2px 0; }
+
+  .criterion { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; touch-action: pan-y; transition: background 120ms, border-color 120ms; }
+  .criterion.active { background: #eafaf1; border-color: #34c759; }
+  .check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c7c7cc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 120ms, border-color 120ms; }
+  .criterion.active .check { background: #34c759; border-color: #34c759; }
+  .check-mark { width: 10px; height: 7px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); opacity: 0; transition: opacity 120ms; }
+  .criterion.active .check-mark { opacity: 1; }
+  .crit-label  { font-size: 15px; color: #1c1c1e; font-weight: 500; line-height: 1.3; flex: 1; }
+  .crit-detail { font-size: 12px; color: #8e8e93; margin-top: 2px; }
+
+  .bottom-bar { flex-shrink: 0; padding: 6px 14px 10px; }
+  .btn-reset { width: 100%; background: #fff; border: 1.5px solid #e5e5ea; color: #3a3a3c; border-radius: 11px; padding: 13px; font-size: 13px; font-family: inherit; cursor: pointer; }
+  .disclaimer { flex-shrink: 0; padding: 0 14px 8px; font-size: 10px; color: #aeaeb2; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <a class="back-btn" href="index.html">‹</a>
+  <h1>Ottawa Rules</h1>
+  <div class="tabs">
+    <div class="tab active" data-tab="ankle">Fotled</div>
+    <div class="tab" data-tab="foot">Fot</div>
+    <div class="tab" data-tab="knee">Knä</div>
+  </div>
+</div>
+
+<!-- FOTLED -->
+<div class="panel active" id="panel-ankle">
+  <div class="result-bar" id="ankle-result">
+    <div class="result-icon" id="ankle-icon">—</div>
+    <div class="result-text">
+      <div class="result-label" id="ankle-label">BOCKA AV KRITERIER</div>
+      <div class="result-action" id="ankle-action">—</div>
+    </div>
+  </div>
+  <div class="criteria">
+    <div class="info-box">Akut fotledstrauma · <strong>Inom 7 dagar</strong> · Smärta vid malleolen krävs · Röntgen indicerat om minst ett kriterium uppfylls.</div>
+    <div class="section-label">PALPATIONSÖMHET</div>
+    <div class="criterion" data-id="post-lat"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Bakre kanten av laterala malleolen</div><div class="crit-detail">Ömhet de distala 6 cm eller längst distalt</div></div></div>
+    <div class="criterion" data-id="post-med"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Bakre kanten av mediala malleolen</div><div class="crit-detail">Ömhet de distala 6 cm eller längst distalt</div></div></div>
+    <div class="section-label">BELASTNING</div>
+    <div class="criterion" data-id="weight"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Oförmåga att ta fyra steg</div><div class="crit-detail">Direkt efter trauma och vid undersökning · hälta räknas som belastning</div></div></div>
+  </div>
+  <div class="bottom-bar"><button class="btn-reset" data-panel="ankle">↺ Nollställ</button></div>
+  <div class="disclaimer">Gäller vuxna · Var frikostig med röntgen hos barn, sköra äldre, känd osteoporos · AKO Skåne</div>
+</div>
+
+<!-- FOT -->
+<div class="panel" id="panel-foot">
+  <div class="result-bar" id="foot-result">
+    <div class="result-icon" id="foot-icon">—</div>
+    <div class="result-text">
+      <div class="result-label" id="foot-label">BOCKA AV KRITERIER</div>
+      <div class="result-action" id="foot-action">—</div>
+    </div>
+  </div>
+  <div class="criteria">
+    <div class="info-box">Akut fottrauma · <strong>Inom 7 dagar</strong> · Smärta i mellanfoten krävs · Röntgen indicerat om minst ett kriterium uppfylls.</div>
+    <div class="section-label">PALPATIONSÖMHET</div>
+    <div class="criterion" data-id="mt5"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Basen av 5:e metatarsalbenet</div><div class="crit-detail">Ömhet vid palpation</div></div></div>
+    <div class="criterion" data-id="nav"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Os naviculare</div><div class="crit-detail">Ömhet vid palpation</div></div></div>
+    <div class="section-label">BELASTNING</div>
+    <div class="criterion" data-id="foot-weight"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Oförmåga att ta fyra steg</div><div class="crit-detail">Direkt efter trauma och vid undersökning · hälta räknas som belastning</div></div></div>
+  </div>
+  <div class="bottom-bar"><button class="btn-reset" data-panel="foot">↺ Nollställ</button></div>
+  <div class="disclaimer">Gäller vuxna · Var frikostig med röntgen hos barn, sköra äldre, känd osteoporos · AKO Skåne</div>
+</div>
+
+<!-- KNÄ -->
+<div class="panel" id="panel-knee">
+  <div class="result-bar" id="knee-result">
+    <div class="result-icon" id="knee-icon">—</div>
+    <div class="result-text">
+      <div class="result-label" id="knee-label">BOCKA AV KRITERIER</div>
+      <div class="result-action" id="knee-action">—</div>
+    </div>
+  </div>
+  <div class="criteria">
+    <div class="info-box">Akut knätrauma · <strong>Inom 7 dagar</strong> · Ålder ≥2 år · Röntgen indicerat om minst ett kriterium uppfylls.</div>
+    <div class="criterion" data-id="age55"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Ålder ≥55 år</div></div></div>
+    <div class="criterion" data-id="fibula"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Ömhet över fibulahuvudet</div><div class="crit-detail">Palpationsömhet proximalt lateralt</div></div></div>
+    <div class="criterion" data-id="patella"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Isolerad patellaömhet</div><div class="crit-detail">Ömhet vid direkt palpation av patella — ingen annan ömhet</div></div></div>
+    <div class="criterion" data-id="flex"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Oförmåga att flektera knät &gt;90°</div><div class="crit-detail">Kan inte böja knät förbi rät vinkel</div></div></div>
+    <div class="criterion" data-id="knee-weight"><div class="check"><div class="check-mark"></div></div><div class="crit-text"><div class="crit-label">Oförmåga att ta fyra steg</div><div class="crit-detail">Direkt efter trauma och vid undersökning · hälta räknas som belastning</div></div></div>
+  </div>
+  <div class="bottom-bar"><button class="btn-reset" data-panel="knee">↺ Nollställ</button></div>
+  <div class="disclaimer">Var frikostig med röntgen hos barn, sköra äldre, känd osteoporos · Stiell et al. 1995</div>
+</div>
+
+<script>
+(function() {
+  function addTap(el, fn) {
+    let startY = 0, moved = false;
+    el.addEventListener('pointerdown', e => { startY = e.clientY; moved = false; }, { passive: true });
+    el.addEventListener('pointermove', e => { if (Math.abs(e.clientY - startY) > 10) moved = true; }, { passive: true });
+    el.addEventListener('pointerup', () => { if (!moved) fn(); });
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  function setupPanel(panelId, resultId, iconId, labelId, actionId) {
+    const criteria = document.querySelectorAll('#panel-' + panelId + ' .criterion');
+    const barEl    = document.getElementById(resultId);
+    const iconEl   = document.getElementById(iconId);
+    const labelEl  = document.getElementById(labelId);
+    const actionEl = document.getElementById(actionId);
+    let active = new Set();
+
+    function update() {
+      if (active.size === 0) {
+        barEl.className = 'result-bar';
+        iconEl.textContent = '—'; iconEl.style.fontSize = ''; iconEl.style.color = '';
+        labelEl.textContent = 'BOCKA AV KRITERIER'; actionEl.textContent = '—';
+      } else {
+        barEl.className = 'result-bar xray';
+        iconEl.textContent = 'RTG'; iconEl.style.fontSize = '13px'; iconEl.style.color = '#c0392b';
+        labelEl.textContent = 'RÖNTGEN INDICERAT'; actionEl.textContent = 'Remiss röntgen';
+      }
+    }
+
+    criteria.forEach(el => {
+      addTap(el, () => {
+        if (active.has(el)) { active.delete(el); el.classList.remove('active'); }
+        else                { active.add(el);    el.classList.add('active'); }
+        update();
+      });
+    });
+
+    document.querySelector('[data-panel="' + panelId + '"]').addEventListener('click', () => {
+      active.clear();
+      criteria.forEach(e => { e.classList.remove('active'); });
+      update();
+    });
+  }
+
+  setupPanel('ankle', 'ankle-result', 'ankle-icon', 'ankle-label', 'ankle-action');
+  setupPanel('foot',  'foot-result',  'foot-icon',  'foot-label',  'foot-action');
+  setupPanel('knee',  'knee-result',  'knee-icon',  'knee-label',  'knee-action');
+
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('dblclick', e => e.preventDefault());
+})();
+</script>
+</body>
+</html>

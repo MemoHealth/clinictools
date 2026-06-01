@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7">
+<title>Otit barn</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { height: 100%; background: #f2f2f7; color: #1c1c1e; font-family: -apple-system, system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+
+  .header { padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 8px; flex-shrink: 0; }
+  .back-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #e5e5ea; border-radius: 9px; font-size: 18px; color: #1c1c1e; text-decoration: none; flex-shrink: 0; margin-bottom: 4px; }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header p  { font-size: 12px; color: #8e8e93; margin-top: 2px; }
+
+  /* Result — sticky top */
+  .result-bar { flex-shrink: 0; margin: 4px 14px 6px; border-radius: 14px; padding: 13px 16px; display: flex; align-items: flex-start; gap: 12px; background: #fff; border: 1.5px solid #e5e5ea; transition: background 300ms, border-color 300ms; }
+  .result-bar.green  { background: #fff2f2; border-color: #ff3b30; }
+  .result-bar.yellow { background: #fffbea; border-color: #f59e0b; }
+  .result-dot { width: 44px; height: 44px; border-radius: 50%; background: #f2f2f7; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #8e8e93; text-align: center; line-height: 1.2; transition: background 300ms, color 300ms; }
+  .result-bar.green  .result-dot { background: #fff2f2; color: #c0392b; }
+  .result-bar.yellow .result-dot { background: #fef3c7; color: #92400e; }
+  .result-text { flex: 1; }
+  .result-label  { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #8e8e93; }
+  .result-bar.green  .result-label { color: #ff3b30; }
+  .result-bar.yellow .result-label { color: #d97706; }
+  .result-action { font-size: 13px; color: #3a3a3c; margin-top: 3px; line-height: 1.5; }
+  .result-dose { font-size: 12px; color: #8e8e93; margin-top: 4px; line-height: 1.4; }
+
+  /* Scroll content */
+  .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 4px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+
+  .info-box { background: #e8f4fd; border: 1.5px solid #7ec8f5; border-radius: 12px; padding: 11px 14px; font-size: 12px; color: #1a4a6a; line-height: 1.5; }
+
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #8e8e93; padding: 4px 2px 0; }
+
+  /* Age selector */
+  .age-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .age-btn { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 12px; padding: 12px 10px; text-align: center; cursor: pointer; transition: background 120ms, border-color 120ms; touch-action: pan-y; }
+  .age-btn.active { background: #eaf3ff; border-color: #007aff; }
+  .age-btn .age-label { font-size: 15px; font-weight: 600; color: #1c1c1e; }
+  .age-btn.active .age-label { color: #007aff; }
+  .age-btn .age-desc  { font-size: 11px; color: #8e8e93; margin-top: 2px; }
+
+  /* Modifier checkboxes */
+  .criterion { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 14px; padding: 13px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; touch-action: pan-y; transition: background 120ms, border-color 120ms; }
+  .criterion.active { background: #fff2f2; border-color: #ff3b30; }
+  .criterion.locked { opacity: 0.35; pointer-events: none; }
+  .check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c7c7cc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 120ms, border-color 120ms; }
+  .criterion.active .check { background: #ff3b30; border-color: #ff3b30; }
+  .check-mark { width: 10px; height: 7px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); opacity: 0; transition: opacity 120ms; }
+  .criterion.active .check-mark { opacity: 1; }
+  .crit-label  { font-size: 14px; color: #1c1c1e; font-weight: 500; line-height: 1.3; flex: 1; }
+  .crit-detail { font-size: 11px; color: #8e8e93; margin-top: 2px; }
+
+  .bottom-bar { flex-shrink: 0; padding: 6px 14px 10px; }
+  .btn-reset { width: 100%; background: #fff; border: 1.5px solid #e5e5ea; color: #3a3a3c; border-radius: 11px; padding: 13px; font-size: 13px; font-family: inherit; cursor: pointer; }
+  .disclaimer { flex-shrink: 0; padding: 0 14px 8px; font-size: 10px; color: #aeaeb2; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="index.html">‹</a>
+  <h1>Otit — antibiotikaval</h1>
+  <p>Akut mediaotit barn · Strama / Skånelistan 2024</p>
+</div>
+
+<div class="result-bar" id="resultBar">
+  <div class="result-dot" id="resultDot">?</div>
+  <div class="result-text">
+    <div class="result-label" id="resultLabel">VÄLJ ÅLDER</div>
+    <div class="result-action" id="resultAction">—</div>
+    <div class="result-dose" id="resultDose"></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="info-box">Förutsätter säker AOM: <strong>buktande trumhinna</strong> + akut debut + smärta/feber. Skrikrosa trumhinna = SOM, ej indikation.</div>
+
+  <div class="section-label">ÅLDER</div>
+  <div class="age-grid">
+    <div class="age-btn" data-age="u1">
+      <div class="age-label">&lt; 1 år</div>
+      <div class="age-desc">Alltid antibiotika</div>
+    </div>
+    <div class="age-btn" data-age="1to2">
+      <div class="age-label">1–2 år</div>
+      <div class="age-desc">Beror på fynd</div>
+    </div>
+    <div class="age-btn" data-age="2to12">
+      <div class="age-label">2–12 år</div>
+      <div class="age-desc">Exspektans ofta</div>
+    </div>
+    <div class="age-btn" data-age="o12">
+      <div class="age-label">&gt; 12 år</div>
+      <div class="age-desc">Alltid antibiotika</div>
+    </div>
+  </div>
+
+  <div class="section-label">FYND</div>
+
+  <div class="criterion locked" data-id="bilateral" id="crit-bilateral">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">Bilateral AOM</div>
+      <div class="crit-detail">Båda öronen påverkade</div>
+    </div>
+  </div>
+
+  <div class="criterion locked" data-id="otorre" id="crit-otorre">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">Otorré</div>
+      <div class="crit-detail">Spontan perforation med flytning från örat</div>
+    </div>
+  </div>
+
+  <div class="criterion locked" data-id="paverkad" id="crit-paverkad">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">Allmänpåverkan</div>
+      <div class="crit-detail">Slö, irritabel, svår smärta, hög feber</div>
+    </div>
+  </div>
+
+  <div class="criterion locked" data-id="mastoid" id="crit-mastoid">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">Mastoidittecken</div>
+      <div class="crit-detail">Rodnad/svullnad bakom örat · utstående ytteröra</div>
+    </div>
+  </div>
+
+  <div class="criterion locked" data-id="ror" id="crit-ror">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">Rör i trumhinnan</div>
+      <div class="crit-detail">Insatta ventilationsrör</div>
+    </div>
+  </div>
+
+  <div class="criterion locked" data-id="recidiv" id="crit-recidiv">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">Recidiv — ny otit inom 1 månad</div>
+      <div class="crit-detail">Med symtomfritt intervall sedan föregående</div>
+    </div>
+  </div>
+
+  <div class="criterion locked" data-id="terapisvikt" id="crit-terapisvikt">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">Terapisvikt</div>
+      <div class="crit-detail">Utebliven förbättring efter ≥3 dygns antibiotikabehandling</div>
+    </div>
+  </div>
+
+  <div class="criterion locked" data-id="otitbenaegna" id="crit-otitbenaegna">
+    <div class="check"><div class="check-mark"></div></div>
+    <div class="crit-text">
+      <div class="crit-label">Otitbenäget barn</div>
+      <div class="crit-detail">≥3 AOM på 6 månader · eller ≥4 AOM på 12 månader</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-bar">
+  <button class="btn-reset" id="resetBtn">↺ Nollställ</button>
+</div>
+<div class="disclaimer">Dos är Strama-rekommendation, ej viktbaserad kalkyl · Klinisk bedömning alltid primär</div>
+
+<script>
+(function() {
+  let age = null;
+  let mods = new Set();
+
+  const barEl    = document.getElementById('resultBar');
+  const dotEl    = document.getElementById('resultDot');
+  const lblEl    = document.getElementById('resultLabel');
+  const actEl    = document.getElementById('resultAction');
+  const doseEl   = document.getElementById('resultDose');
+
+  // Dose texts
+  const DOSE_PCV       = 'PcV 25 mg/kg × 3 i 5 dygn (max 1,6 g × 3)';
+  const DOSE_PCV_10    = 'PcV 25 mg/kg × 3 i 10 dygn (max 1,6 g × 3)';
+  const DOSE_AMOX_10   = 'Amoxicillin 25 mg/kg × 3 i 10 dygn (max 750 mg × 3) · Ta NPH-odling';
+  const DOSE_TPB       = 'Terracortril med Polymyxin B — 2–3 droppar × 3 i 7 dygn';
+  const DOSE_EXSP      = 'Smärtstillande (paracetamol/ibuprofen) · Nässpray · Åter vid utebliven förbättring 2–3 dygn';
+
+  function setResult(type, dot, label, action, dose) {
+    barEl.className = 'result-bar ' + type;
+    dotEl.textContent = dot;
+    lblEl.textContent = label;
+    actEl.textContent = action;
+    doseEl.textContent = dose || '';
+  }
+
+  function evaluate() {
+    if (!age) {
+      barEl.className = 'result-bar';
+      dotEl.textContent = '?';
+      lblEl.textContent = 'VÄLJ ÅLDER';
+      actEl.textContent = '—';
+      doseEl.textContent = '';
+      return;
+    }
+
+    const bilateral      = mods.has('bilateral');
+    const otorre         = mods.has('otorre');
+    const paverkad       = mods.has('paverkad');
+    const mastoid        = mods.has('mastoid');
+    const ror            = mods.has('ror');
+    const recidiv        = mods.has('recidiv');
+    const terapisvikt    = mods.has('terapisvikt');
+    const otitbenaegna   = mods.has('otitbenaegna');
+
+    // Mastoidit → akut remiss
+    if (mastoid) {
+      setResult('green', 'AKUT', 'MASTOIDITTECKEN', 'Akut remiss ÖNH — undersök snarast', '');
+      return;
+    }
+
+    // Otitbenäget → remiss ÖNH + behandla episoden
+    if (otitbenaegna) {
+      setResult('green', 'ATB', 'OTITBENÄGET BARN · REMISS ÖNH',
+        'Remittera till ÖNH-specialist · Behandla aktuell episod med amoxicillin 10 dygn',
+        DOSE_AMOX_10);
+      return;
+    }
+
+    // Terapisvikt → amoxicillin + odling
+    if (terapisvikt) {
+      setResult('green', 'ATB', 'TERAPISVIKT',
+        'Byt till amoxicillin · Ta NPH-odling (ev. hörselgångsodling vid perforation)',
+        DOSE_AMOX_10);
+      return;
+    }
+
+    // Rör i trumhinnan → lokalbehandling
+    if (ror) {
+      setResult('yellow', 'LOKAL', 'RÖR I TRUMHINNAN', 'Lokalbehandling — ej perorala antibiotika', DOSE_TPB);
+      return;
+    }
+
+    if (age === 'u1') {
+      setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT', 'Barn < 1 år — alltid behandla',
+        recidiv ? DOSE_PCV_10 : DOSE_PCV);
+      return;
+    }
+
+    if (age === 'o12') {
+      setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT', 'Barn > 12 år — behandla som vuxen',
+        recidiv ? DOSE_PCV_10 : DOSE_PCV);
+      return;
+    }
+
+    if (age === '1to2') {
+      if (bilateral || otorre || paverkad) {
+        setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT',
+          bilateral  ? 'Bilateral AOM hos barn 1–2 år' :
+          otorre     ? 'Otorré — behandla oavsett ålder' :
+                       'Allmänpåverkan — behandla',
+          recidiv ? DOSE_PCV_10 : DOSE_PCV);
+      } else {
+        setResult('yellow', 'EXSP', 'AKTIV EXSPEKTANS',
+          'Unilateral AOM, opåverkad — exspektans möjlig', DOSE_EXSP);
+      }
+      return;
+    }
+
+    if (age === '2to12') {
+      if (otorre || paverkad) {
+        setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT',
+          otorre   ? 'Otorré — behandla oavsett ålder' :
+                     'Allmänpåverkan — behandla',
+          recidiv ? DOSE_PCV_10 : DOSE_PCV);
+      } else {
+        setResult('yellow', 'EXSP', 'AKTIV EXSPEKTANS',
+          'Okomplicerad AOM 2–12 år — aktiv exspektans', DOSE_EXSP);
+      }
+      return;
+    }
+  }
+
+  // Age buttons
+  document.querySelectorAll('.age-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      age = btn.dataset.age;
+
+      // Lock/unlock modifiers by age
+      // < 1 år and > 12 år: only mastoid and ror relevant
+      const allMods = ['bilateral','otorre','paverkad','mastoid','ror','recidiv','terapisvikt','otitbenaegna'];
+      const ageSpecific = (age === 'u1' || age === 'o12')
+        ? ['mastoid','ror','recidiv','terapisvikt','otitbenaegna']
+        : ['bilateral','otorre','paverkad','mastoid','ror','recidiv','terapisvikt','otitbenaegna'];
+
+      allMods.forEach(id => {
+        const el = document.getElementById('crit-' + id);
+        if (ageSpecific.includes(id)) {
+          el.classList.remove('locked');
+        } else {
+          el.classList.add('locked');
+          el.classList.remove('active');
+          mods.delete(id);
+        }
+      });
+
+      evaluate();
+    });
+  });
+
+  // Modifier criteria — scroll-safe tap
+  document.querySelectorAll('.criterion').forEach(el => {
+    let startY = 0, moved = false;
+    el.addEventListener('pointerdown', e => { startY = e.clientY; moved = false; }, { passive: true });
+    el.addEventListener('pointermove', e => { if (Math.abs(e.clientY - startY) > 10) moved = true; }, { passive: true });
+    el.addEventListener('pointerup', () => {
+      if (moved) return;
+      const id = el.dataset.id;
+      if (mods.has(id)) { mods.delete(id); el.classList.remove('active'); }
+      else              { mods.add(id);    el.classList.add('active'); }
+      evaluate();
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    age = null; mods.clear();
+    document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.criterion').forEach(el => {
+      el.classList.remove('active');
+      el.classList.add('locked');
+    });
+    evaluate();
+  });
+
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('dblclick', e => e.preventDefault());
+})();
+</script>
+</body>
+</html>

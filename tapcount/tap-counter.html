@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7">
+<title>Tap Counter</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { height: 100%; overflow: hidden; background: #f2f2f7; color: #1c1c1e; font-family: -apple-system, system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+
+  /* HEADER */
+  .header { padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 0; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
+  .header-top { display: flex; align-items: center; gap: 10px; }
+  .back-btn { background: #e5e5ea; border: none; color: #1c1c1e; font-size: 18px; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; text-decoration: none; }
+  .tabs { display: flex; background: #e5e5ea; border-radius: 10px; padding: 2px; gap: 2px; flex: 1; }
+  .tab { flex: 1; text-align: center; padding: 9px 4px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #8e8e93; cursor: pointer; transition: background 150ms, color 150ms; }
+  .tab.active { background: #fff; color: #1c1c1e; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .window-select { display: flex; gap: 4px; justify-content: flex-end; padding-bottom: 4px; }
+  .window-select button { background: #e5e5ea; border: none; color: #8e8e93; padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; min-width: 38px; cursor: pointer; }
+  .window-select button.active { background: #fff; color: #1c1c1e; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+  /* AGE BAR */
+  .age-bar { flex-shrink: 0; padding: 6px 14px 4px; display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .age-bar::-webkit-scrollbar { display: none; }
+  .age-bar button { flex: 0 0 auto; background: #fff; border: 1.5px solid #e5e5ea; color: #3a3a3c; padding: 8px 12px; border-radius: 9px; font-size: 12px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+  .age-bar button.active { background: #eafaf1; border-color: #34c759; color: #1a7a3a; }
+
+  /* DISPLAY */
+  .display { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 6px 16px 8px; }
+  .status-badge { font-size: 10px; letter-spacing: 2px; color: transparent; height: 13px; }
+  .status-badge.live    { color: #34c759; }
+  .status-badge.frozen  { color: #8e8e93; }
+  .status-badge.stalled { color: #f59e0b; }
+  .rate { font-size: 100px; font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -3px; color: #e5e5ea; }
+  .rate.dim    { color: #c7c7cc; }
+  .rate.live   { color: #1c1c1e; }
+  .rate.frozen { color: #3a3a3c; }
+  .unit { font-size: 13px; color: #8e8e93; margin-top: 2px; letter-spacing: 2px; }
+  .reference { margin-top: 8px; padding: 7px 14px; background: #fff; border: 1.5px solid #e5e5ea; border-radius: 9px; display: flex; align-items: center; gap: 10px; }
+  .ref-label { color: #8e8e93; font-size: 11px; letter-spacing: 1px; }
+  .ref-value { color: #1c1c1e; font-size: 14px; font-variant-numeric: tabular-nums; font-weight: 500; }
+  .progress-wrap { margin-top: 8px; width: 100%; max-width: 320px; height: 4px; background: #e5e5ea; border-radius: 2px; overflow: hidden; }
+  .progress-bar { height: 100%; width: 0%; background: #34c759; border-radius: 2px; transition: width 250ms linear; }
+  .stats-row { margin-top: 8px; display: flex; gap: 8px; }
+  .stat { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 9px; padding: 8px 16px; min-width: 84px; text-align: center; }
+  .stat .label { font-size: 10px; color: #8e8e93; letter-spacing: 1.5px; }
+  .stat .val { font-size: 20px; color: #1c1c1e; font-variant-numeric: tabular-nums; font-weight: 500; margin-top: 1px; }
+  .stat .val.dim { color: #c7c7cc; }
+  .meta { margin-top: 6px; display: flex; gap: 18px; color: #8e8e93; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .meta span b { color: #3a3a3c; font-weight: 500; }
+
+  /* TAP AREA */
+  .tap-area { flex: 1; min-height: 80px; background: #e5e5ea; border: 2px solid #d1d1d6; margin: 0 14px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; transition: background 120ms, border-color 120ms; cursor: pointer; }
+  .tap-area.flash { background: #d4f7e0; border-color: #34c759; }
+  .tap-label { color: #8e8e93; font-size: 12px; letter-spacing: 2px; pointer-events: none; transition: color 120ms; }
+  .tap-area.flash .tap-label { color: #1a7a3a; }
+  .pulse-dot { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: #34c759; top: 12px; right: 12px; opacity: 0; transition: opacity 120ms; pointer-events: none; }
+  .pulse-dot.on { opacity: 1; }
+  .ripple { position: absolute; border-radius: 50%; background: rgba(52,199,89,0.2); transform: scale(0); animation: ripple-expand 500ms ease-out forwards; pointer-events: none; }
+  @keyframes ripple-expand { to { transform: scale(4); opacity: 0; } }
+
+  /* BOTTOM */
+  .bottom-bar { flex-shrink: 0; display: flex; gap: 8px; padding: 8px 14px 10px; }
+  .btn-save { flex: 1; background: #eafaf1; border: 1.5px solid #34c759; color: #1a7a3a; border-radius: 11px; padding: 13px; font-size: 13px; font-weight: 600; letter-spacing: 1px; cursor: pointer; font-family: inherit; }
+  .btn-reset { background: #fff; border: 1.5px solid #e5e5ea; color: #3a3a3c; border-radius: 11px; padding: 13px 16px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .disclaimer { flex-shrink: 0; padding: 0 14px 8px; font-size: 10px; color: #aeaeb2; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <a class="back-btn" href="index.html">‹</a>
+    <div class="tabs" id="modeTabs">
+      <div class="tab active" data-mode="pulse">Puls</div>
+      <div class="tab" data-mode="resp">Andning</div>
+    </div>
+    <div class="window-select" id="windowSelect">
+      <button data-window="10">10s</button>
+      <button data-window="15" class="active">15s</button>
+      <button data-window="30">30s</button>
+      <button data-window="60">60s</button>
+    </div>
+  </div>
+</div>
+
+<div class="age-bar">
+  <button data-age="adult" class="active">Vuxen</button>
+  <button data-age="teen">12–18 år</button>
+  <button data-age="school">6–12 år</button>
+  <button data-age="preschool">3–6 år</button>
+  <button data-age="toddler">1–3 år</button>
+  <button data-age="infant">Spädbarn</button>
+  <button data-age="neonate">Nyfödd</button>
+</div>
+
+<div class="display">
+  <div class="status-badge" id="statusBadge"> </div>
+  <div class="rate dim" id="rate">--</div>
+  <div class="unit" id="unit">SLAG/MIN</div>
+  <div class="reference">
+    <span class="ref-label">REF</span>
+    <span class="ref-value" id="refValue">60–100</span>
+  </div>
+  <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="stats-row">
+    <div class="stat"><div class="label">MEDEL</div><div class="val dim" id="meanVal">--</div></div>
+    <div class="stat"><div class="label">MAX</div><div class="val dim" id="maxVal">--</div></div>
+  </div>
+  <div class="meta">
+    <span>Taps: <b id="tapCount">0</b></span>
+    <span>Fyllt: <b id="windowFill">0%</b></span>
+  </div>
+</div>
+
+<div class="tap-area" id="tapArea">
+  <div class="pulse-dot" id="pulseDot"></div>
+  <div class="tap-label">TRYCK I TAKT</div>
+</div>
+
+<div class="bottom-bar">
+  <button class="btn-save" id="saveBtn">SPARA VÄRDE</button>
+  <button class="btn-reset" id="resetBtn">↺ Nollställ</button>
+</div>
+<div class="disclaimer">Referensintervall är allmänna riktvärden, ej patientspecifik tolkning</div>
+
+<script>
+(function() {
+  const REF = {
+    neonate:   { pulse: [100, 180], resp: [30, 60] },
+    infant:    { pulse: [100, 160], resp: [25, 50] },
+    toddler:   { pulse: [90, 150],  resp: [20, 35] },
+    preschool: { pulse: [80, 130],  resp: [20, 30] },
+    school:    { pulse: [70, 120],  resp: [18, 25] },
+    teen:      { pulse: [60, 110],  resp: [12, 20] },
+    adult:     { pulse: [60, 100],  resp: [12, 20] }
+  };
+  const EMA_ALPHA = 0.25;
+  const DEFAULT_WINDOW = { pulse: 15, resp: 30 };
+  const WINDOW_STEPS = { pulse: [15, 30, 60], resp: [30, 60] };
+  const MAX_HISTORY = 10;
+  const STORAGE_KEY = 'tapcount-history-v1';
+  const INACTIVITY_TIMEOUT = 8000;
+  const AGE_LABEL = { neonate:'Nyfödd', infant:'Spädbarn', toddler:'1–3år', preschool:'3–6år', school:'6–12år', teen:'12–18år', adult:'Vuxen' };
+
+  let taps=[], rateHistory=[], history=[], emaRate=null, isFrozen=false;
+  let windowSec=15, windowStepIdx=0, mode='pulse', age='adult', lastTapTime=0;
+
+  const rateEl=document.getElementById('rate'), unitEl=document.getElementById('unit'),
+    refValueEl=document.getElementById('refValue'), tapCountEl=document.getElementById('tapCount'),
+    windowFillEl=document.getElementById('windowFill'), progressBar=document.getElementById('progressBar'),
+    tapArea=document.getElementById('tapArea'), pulseDot=document.getElementById('pulseDot'),
+    statusBadge=document.getElementById('statusBadge'), meanValEl=document.getElementById('meanVal'),
+    maxValEl=document.getElementById('maxVal');
+
+  function now() { return performance.now(); }
+
+  function updateReference() {
+    const r = REF[age][mode];
+    refValueEl.textContent = r[0] + '–' + r[1];
+  }
+
+  function setWindowBtn(sec) {
+    document.querySelectorAll('#windowSelect button').forEach(b => b.classList.toggle('active', parseInt(b.dataset.window,10)===sec));
+    windowSec = sec;
+    const steps = WINDOW_STEPS[mode];
+    windowStepIdx = Math.max(0, steps.indexOf(sec));
+  }
+
+  function tryExpandWindow() {
+    const steps = WINDOW_STEPS[mode];
+    if (windowStepIdx >= steps.length-1) return;
+    windowStepIdx++; windowSec = steps[windowStepIdx]; setWindowBtn(windowSec);
+  }
+
+  function triggerVisualEffects() {
+    tapArea.classList.add('flash'); pulseDot.classList.add('on');
+    setTimeout(() => tapArea.classList.remove('flash'), 150);
+    setTimeout(() => pulseDot.classList.remove('on'), 120);
+    const ripple = document.createElement('div'); ripple.className = 'ripple';
+    const size = Math.max(tapArea.offsetWidth, tapArea.offsetHeight);
+    ripple.style.width = ripple.style.height = size+'px';
+    ripple.style.left = (tapArea.offsetWidth/2-size/2)+'px';
+    ripple.style.top  = (tapArea.offsetHeight/2-size/2)+'px';
+    tapArea.appendChild(ripple); setTimeout(()=>ripple.remove(),520);
+  }
+
+  function recordTap() {
+    const t = now();
+    if (isFrozen||(taps.length>0&&(t-lastTapTime)>INACTIVITY_TIMEOUT)) { fullReset(); }
+    taps.push(t); lastTapTime=t;
+    const maxWindowMs=WINDOW_STEPS[mode][WINDOW_STEPS[mode].length-1]*1000;
+    taps=taps.filter(x=>t-x<=maxWindowMs);
+    triggerVisualEffects();
+    tapCountEl.textContent=taps.length;
+    statusBadge.className='status-badge live'; statusBadge.textContent='● LIVE';
+    if (taps.length>=2) {
+      const elapsed=(t-taps[0])/1000, raw=((taps.length-1)/elapsed)*60;
+      emaRate=emaRate===null?raw:EMA_ALPHA*raw+(1-EMA_ALPHA)*emaRate;
+      rateEl.textContent=Math.round(emaRate); rateEl.className='rate live';
+      if (taps.length>=3) rateHistory.push(Math.round(raw));
+    }
+    updateProgress();
+  }
+
+  function updateProgress() {
+    if (isFrozen||taps.length===0) return;
+    const t=now(), windowMs=windowSec*1000, elapsed=t-taps[0];
+    const fill=Math.min(100,(elapsed/windowMs)*100);
+    if (fill>=100) { const s=WINDOW_STEPS[mode]; if (windowStepIdx<s.length-1) { tryExpandWindow(); return; } }
+    progressBar.style.width=fill+'%'; windowFillEl.textContent=Math.round(fill)+'%';
+  }
+
+  function tick() {
+    if (isFrozen) return;
+    const t=now();
+    if ((t-lastTapTime)>4000&&emaRate!==null) { statusBadge.className='status-badge stalled'; statusBadge.textContent='● AVSTANNAD'; }
+    updateProgress();
+  }
+
+  function loadHistory() { try { const r=localStorage.getItem(STORAGE_KEY); if(r) history=JSON.parse(r)||[]; } catch(e){history=[];} }
+  function saveHistory() { try { localStorage.setItem(STORAGE_KEY,JSON.stringify(history)); } catch(e){} }
+
+  function saveValue() {
+    if (emaRate===null||isFrozen) return;
+    isFrozen=true;
+    const frozen=Math.round(emaRate);
+    rateEl.textContent=frozen; rateEl.className='rate frozen';
+    statusBadge.className='status-badge frozen'; statusBadge.textContent='◼ SPARAT';
+    const src=rateHistory.length>0?rateHistory:[frozen];
+    meanValEl.textContent=Math.round(src.reduce((a,b)=>a+b,0)/src.length); meanValEl.className='val';
+    maxValEl.textContent=Math.max(...src); maxValEl.className='val';
+    history.unshift({value:frozen,mode,age,time:Date.now()});
+    if(history.length>MAX_HISTORY) history.length=MAX_HISTORY;
+    saveHistory();
+  }
+
+  function fullReset() {
+    taps=[]; rateHistory=[]; emaRate=null; isFrozen=false; windowStepIdx=0; lastTapTime=0;
+    rateEl.textContent='--'; rateEl.className='rate dim';
+    statusBadge.className='status-badge'; statusBadge.textContent=' ';
+    tapCountEl.textContent='0'; windowFillEl.textContent='0%'; progressBar.style.width='0%';
+    meanValEl.textContent='--'; meanValEl.className='val dim';
+    maxValEl.textContent='--'; maxValEl.className='val dim';
+    setWindowBtn(DEFAULT_WINDOW[mode]);
+  }
+
+  tapArea.addEventListener('pointerdown', e => { e.preventDefault(); recordTap(); });
+  document.getElementById('saveBtn').addEventListener('pointerdown', e => { e.preventDefault(); saveValue(); });
+  document.getElementById('resetBtn').addEventListener('pointerdown', e => { e.preventDefault(); fullReset(); });
+
+  setInterval(tick, 200);
+
+  // Mode tabs
+  document.querySelectorAll('#modeTabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#modeTabs .tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      mode = tab.dataset.mode;
+      unitEl.textContent = mode==='pulse' ? 'SLAG/MIN' : 'ANDETAG/MIN';
+      setWindowBtn(DEFAULT_WINDOW[mode]);
+      updateReference(); fullReset();
+    });
+  });
+
+  document.querySelectorAll('#windowSelect button').forEach(btn => {
+    btn.addEventListener('click', () => setWindowBtn(parseInt(btn.dataset.window,10)));
+  });
+
+  document.querySelectorAll('.age-bar button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.age-bar button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active'); age=btn.dataset.age; updateReference();
+    });
+  });
+
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('dblclick', e => e.preventDefault());
+  loadHistory(); updateReference();
+})();
+</script>
+</body>
+</html>
