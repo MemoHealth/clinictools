@@ -30,12 +30,12 @@
   .age-bar button.active { background: #eafaf1; border-color: #34c759; color: #1a7a3a; }
 
   /* DISPLAY */
-  .display { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 6px 16px 8px; }
-  .status-badge { font-size: 10px; letter-spacing: 2px; color: transparent; height: 13px; }
+  .display { flex-shrink: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding: 6px 16px 8px; }
+  .status-badge { font-size: 10px; letter-spacing: 2px; color: transparent; height: 13px; flex-shrink: 0; }
   .status-badge.live    { color: #34c759; }
   .status-badge.frozen  { color: #8e8e93; }
   .status-badge.stalled { color: #f59e0b; }
-  .rate { font-size: 100px; font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -3px; color: #e5e5ea; }
+  .rate { font-size: clamp(72px, 22vw, 100px); font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -3px; color: #e5e5ea; flex-shrink: 0; }
   .rate.dim    { color: #c7c7cc; }
   .rate.live   { color: #1c1c1e; }
   .rate.frozen { color: #3a3a3c; }
@@ -54,7 +54,7 @@
   .meta span b { color: #3a3a3c; font-weight: 500; }
 
   /* TAP AREA */
-  .tap-area { flex: 1; min-height: 80px; background: #e5e5ea; border: 2px solid #d1d1d6; margin: 0 14px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; transition: background 120ms, border-color 120ms; cursor: pointer; }
+  .tap-area { flex: 1; min-height: 60px; background: #e5e5ea; border: 2px solid #d1d1d6; margin: 0 14px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; transition: background 120ms, border-color 120ms; cursor: pointer; }
   .tap-area.flash { background: #d4f7e0; border-color: #34c759; }
   .tap-label { color: #8e8e93; font-size: 12px; letter-spacing: 2px; pointer-events: none; transition: color 120ms; }
   .tap-area.flash .tap-label { color: #1a7a3a; }
