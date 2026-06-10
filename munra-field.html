@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e0d0c">
+<meta name="description" content="Munra Field — AI-verktyg för fastighetsbesiktning. Prata och fotografera som vanligt. Rapporten är klar när du sätter dig i bilen. Vi söker 10 besiktningsmän till en betapilot.">
+<title>Munra Field — Rapporten är klar när du sätter dig i bilen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dark:   #141210;
+    --darker: #0e0d0c;
+    --cream:  #f6f1e7;
+    --cream-dim: #d9d2c4;
+    --ink:    #1a1814;
+    --muted:  #8a8378;
+    --line-d: #2c2925;
+    --line-l: #d8d0c0;
+    --accent: #e25822;
+    --accent-soft: rgba(226, 88, 34, .14);
+    --grad: linear-gradient(150deg, #f2a33c 0%, #e25822 55%, #a93a10 100%);
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --sans: "Space Grotesk", -apple-system, system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  html, body { background: var(--darker); color: var(--cream); }
+  body { font-family: var(--sans); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+
+  ::selection { background: var(--accent); color: var(--cream); }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 22px; }
+  @media (min-width: 900px) { .wrap { max-width: 980px; padding: 0 32px; } }
+
+  /* ---------- mono labels ---------- */
+  .tag {
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    letter-spacing: .18em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .tag::before { content: ""; width: 8px; height: 8px; background: var(--accent); flex-shrink: 0; }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    font-family: var(--mono); font-size: 14px; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase;
+    display: inline-block; padding: 17px 28px;
+    border: none; cursor: pointer; text-decoration: none; text-align: center;
+    transition: transform .15s ease, opacity .15s ease;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-light { background: var(--cream); color: var(--ink); }
+  .btn-dark  { background: var(--ink); color: var(--cream); }
+
+  /* ---------- header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(14, 13, 12, .82);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line-d);
+  }
+  .header-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 14px; padding-bottom: 14px;
+  }
+  .logo { font-family: var(--sans); font-weight: 700; font-size: 20px; letter-spacing: -.02em; color: var(--cream); text-decoration: none; }
+  .logo em { font-style: normal; color: var(--accent); }
+  .logo sup { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; color: var(--muted); margin-left: 6px; vertical-align: super; }
+  .header-cta { padding: 11px 18px; font-size: 12px; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative; overflow: hidden;
+    background: var(--darker);
+    padding: 96px 0 300px;
+  }
+  @media (min-width: 900px) { .hero { padding: 140px 0 340px; } }
+
+  .hero .tag { margin-bottom: 36px; color: var(--cream-dim); }
+
+  h1 {
+    font-size: clamp(40px, 10.5vw, 84px);
+    line-height: 1.04; font-weight: 700; letter-spacing: -.025em;
+    max-width: 13ch;
+  }
+  .hl { display: block; overflow: hidden; padding-bottom: .08em; margin-bottom: -.08em; }
+  .hl > span { display: block; transform: translateY(115%); }
+  .loaded .hl > span { animation: rise .9s cubic-bezier(.16, 1, .3, 1) forwards; }
+  .loaded .hl:nth-child(1) > span { animation-delay: .05s; }
+  .loaded .hl:nth-child(2) > span { animation-delay: .17s; }
+  .loaded .hl:nth-child(3) > span { animation-delay: .29s; }
+  @keyframes rise { to { transform: translateY(0); } }
+
+  .hero p {
+    margin-top: 30px; max-width: 34ch;
+    font-size: clamp(18px, 4.6vw, 22px); line-height: 1.5; color: var(--cream-dim);
+    opacity: 0; transform: translateY(14px);
+  }
+  .hero .btn { margin-top: 38px; opacity: 0; transform: translateY(14px); }
+  .loaded .hero p,
+  .loaded .hero .btn { animation: fadeup .8s cubic-bezier(.16, 1, .3, 1) forwards; }
+  .loaded .hero p   { animation-delay: .5s; }
+  .loaded .hero .btn { animation-delay: .65s; }
+  @keyframes fadeup { to { opacity: 1; transform: translateY(0); } }
+
+  /* orange beams, Scope-style but our own cut */
+  .beams {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 260px;
+    background:
+      repeating-linear-gradient(118deg,
+        rgba(0,0,0,0) 0 70px, rgba(0,0,0,.22) 70px 140px),
+      var(--grad);
+    -webkit-mask-image: linear-gradient(to top, #000 55%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 55%, transparent 100%);
+    pointer-events: none;
+  }
+  @media (min-width: 900px) { .beams { height: 300px; } }
+
+  /* ---------- generic sections ---------- */
+  section { position: relative; }
+  .s-pad { padding-top: 90px; padding-bottom: 90px; }
+  @media (min-width: 900px) { .s-pad { padding-top: 130px; padding-bottom: 130px; } }
+
+  .light { background: var(--cream); color: var(--ink); }
+  .light .tag { color: #6e6759; }
+
+  h2 {
+    font-size: clamp(30px, 7.6vw, 56px);
+    line-height: 1.1; font-weight: 700; letter-spacing: -.02em;
+    max-width: 18ch;
+  }
+  .lede { margin-top: 26px; font-size: clamp(17px, 4.4vw, 20px); max-width: 56ch; }
+  .light .lede { color: #4d473c; }
+  .dark-sec .lede { color: var(--cream-dim); }
+
+  /* scroll reveal */
+  .rv { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s cubic-bezier(.16, 1, .3, 1); }
+  .rv.in { opacity: 1; transform: none; }
+  .rv2 { transition-delay: .12s; }
+  .rv3 { transition-delay: .24s; }
+
+  /* ---------- problem section (light, blueprint) ---------- */
+  .blueprint {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  }
+  .blueprint svg {
+    position: absolute; right: -60px; top: 20px;
+    width: 520px; max-width: 130%; opacity: .5;
+  }
+  .problem .wrap { position: relative; }
+  .problem .accent-kicker {
+    font-weight: 700; color: var(--accent);
+    font-size: clamp(20px, 5vw, 26px); line-height: 1.3; max-width: 24ch;
+    margin-bottom: 22px;
+  }
+
+  /* ---------- steps ---------- */
+  .steps-grid { margin-top: 70px; border-top: 1px solid var(--line-d); }
+  .step {
+    border-bottom: 1px solid var(--line-d);
+    padding: 44px 0 52px;
+  }
+  .step-no {
+    font-family: var(--mono); font-size: 13px; color: var(--accent);
+    letter-spacing: .12em; margin-bottom: 14px;
+  }
+  .step h3 { font-size: clamp(22px, 5.6vw, 30px); font-weight: 700; letter-spacing: -.015em; margin-bottom: 12px; }
+  .step p { color: var(--cream-dim); max-width: 50ch; }
+  .step-visual { margin-top: 30px; }
+  @media (min-width: 900px) {
+    .step { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+    .step-visual { margin-top: 0; }
+    .step:nth-child(even) .step-visual { order: -1; }
+  }
+
+  /* mock: waveform */
+  .mock {
+    background: #1b1916; border: 1px solid var(--line-d);
+    padding: 26px 22px; position: relative;
+  }
+  .mock-head {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 20px;
+  }
+  .rec-dot { color: var(--accent); }
+  .rec-dot::before { content: "● "; animation: blink 1.4s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  .wave { display: flex; align-items: center; gap: 4px; height: 64px; }
+  .wave i {
+    flex: 1; background: var(--cream-dim); min-height: 6%;
+    animation: wob 1.6s ease-in-out infinite alternate;
+  }
+  .wave i:nth-child(4n)   { animation-duration: 1.1s; }
+  .wave i:nth-child(4n+1) { animation-duration: 1.9s; }
+  .wave i:nth-child(4n+2) { animation-duration: 1.4s; }
+  .wave i.hot { background: var(--accent); }
+  @keyframes wob { from { height: 12%; } to { height: 100%; } }
+  @media (prefers-reduced-motion: reduce) {
+    .wave i { animation: none; height: 50%; }
+    .wave i:nth-child(odd) { height: 80%; }
+  }
+
+  /* mock: report rows */
+  .rep-row {
+    display: flex; gap: 12px; align-items: baseline;
+    padding: 13px 0; border-bottom: 1px solid var(--line-d);
+    font-family: var(--mono); font-size: 12.5px; color: var(--cream-dim);
+  }
+  .rep-row:last-child { border-bottom: none; }
+  .rep-row b { color: var(--accent); font-weight: 500; flex-shrink: 0; }
+  .rep-row.dim { color: #5d574d; }
+
+  /* mock: checklist */
+  .chk-row {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 13px 0; border-bottom: 1px solid var(--line-d);
+    font-family: var(--mono); font-size: 13px; letter-spacing: .08em;
+    color: var(--cream-dim); text-transform: uppercase;
+  }
+  .chk-row:last-child { border-bottom: none; }
+  .chk-ok { color: #7fae6e; }
+  .chk-warn { color: var(--accent); }
+
+  /* ---------- big stats ---------- */
+  .stats { border-top: 1px solid var(--line-d); }
+  .stat {
+    border-bottom: 1px solid var(--line-d);
+    padding: 72px 22px; text-align: center;
+  }
+  .stat .num {
+    font-weight: 700; font-size: clamp(78px, 24vw, 170px);
+    line-height: .95; letter-spacing: -.04em; color: var(--cream);
+  }
+  .stat .num small { font-size: .45em; font-weight: 700; letter-spacing: -.02em; }
+  .stat .lbl {
+    margin-top: 22px; font-family: var(--mono); font-size: 12.5px;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--muted);
+    max-width: 30ch; margin-left: auto; margin-right: auto; line-height: 1.8;
+  }
+  @media (min-width: 900px) {
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); border-left: 1px solid var(--line-d); }
+    .stat { border-right: 1px solid var(--line-d); padding: 100px 32px; }
+  }
+
+  /* ---------- traceability demo ---------- */
+  .trace { margin-top: 60px; }
+  @media (min-width: 900px) {
+    .trace { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+  }
+  .trace-list { border: 1px solid var(--line-l); background: #fffdf8; }
+  .trace-item {
+    display: block; width: 100%; text-align: left;
+    background: none; border: none; border-bottom: 1px solid var(--line-l);
+    padding: 18px 18px 18px 20px; cursor: pointer;
+    font-family: var(--sans); font-size: 15.5px; line-height: 1.45; color: var(--ink);
+    transition: background .15s ease;
+    position: relative;
+  }
+  .trace-item:last-child { border-bottom: none; }
+  .trace-item .ref { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: #6e6759; display: block; margin-bottom: 5px; text-transform: uppercase; }
+  .trace-item[aria-selected="true"] { background: var(--accent-soft); }
+  .trace-item[aria-selected="true"]::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
+  }
+  .trace-hint {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: #6e6759; padding: 12px 20px; border-bottom: 1px solid var(--line-l); background: #f3ede0;
+  }
+
+  .trace-src { margin-top: 22px; }
+  @media (min-width: 900px) { .trace-src { margin-top: 0; } }
+  .src-photo {
+    height: 180px; position: relative; border: 1px solid var(--line-l);
+    background:
+      radial-gradient(circle at 30% 35%, rgba(242,163,60,.5), transparent 55%),
+      linear-gradient(160deg, #3a342c, #181612 70%);
+  }
+  .src-photo::before, .src-photo::after {
+    content: ""; position: absolute; width: 18px; height: 18px;
+    border: 2px solid var(--accent);
+  }
+  .src-photo::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+  .src-photo::after  { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+  .src-photo .stamp {
+    position: absolute; bottom: 12px; left: 12px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+    color: var(--cream); background: rgba(14,13,12,.75); padding: 5px 9px;
+  }
+  .src-quote {
+    border: 1px solid var(--line-l); border-top: none; background: #fffdf8;
+    padding: 20px;
+  }
+  .src-quote blockquote {
+    font-size: 15.5px; line-height: 1.55; color: var(--ink); font-style: italic;
+  }
+  .src-quote .meta {
+    margin-top: 14px; font-family: var(--mono); font-size: 11px;
+    letter-spacing: .14em; text-transform: uppercase; color: #6e6759;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .src-quote .meta .mini-wave { display: inline-flex; gap: 2px; align-items: center; height: 12px; }
+  .src-quote .meta .mini-wave i { width: 2px; background: var(--accent); height: 30%; }
+  .src-quote .meta .mini-wave i:nth-child(2n) { height: 90%; }
+  .src-quote .meta .mini-wave i:nth-child(3n) { height: 60%; }
+
+  /* ---------- broker strip ---------- */
+  .broker { border-top: 1px solid var(--line-l); }
+  .broker-grid { margin-top: 44px; display: grid; gap: 1px; background: var(--line-l); border: 1px solid var(--line-l); }
+  @media (min-width: 720px) { .broker-grid { grid-template-columns: repeat(3, 1fr); } }
+  .broker-cell { background: var(--cream); padding: 28px 24px; }
+  .broker-cell h4 { font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 10px; }
+  .broker-cell p { font-size: 15px; color: #4d473c; }
+
+  /* ---------- FAQ ---------- */
+  .faq-list { margin-top: 56px; border-top: 1px solid var(--line-d); }
+  details { border-bottom: 1px solid var(--line-d); }
+  summary {
+    list-style: none; cursor: pointer; padding: 24px 36px 24px 0;
+    font-size: clamp(17px, 4.6vw, 21px); font-weight: 500; position: relative;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after {
+    content: "+"; position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    font-family: var(--mono); font-size: 22px; color: var(--accent); transition: transform .2s ease;
+  }
+  details[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+  details p { padding: 0 0 26px; color: var(--cream-dim); max-width: 60ch; }
+
+  /* ---------- pilot ---------- */
+  .pilot {
+    background:
+      repeating-linear-gradient(118deg, rgba(0,0,0,0) 0 70px, rgba(0,0,0,.14) 70px 140px),
+      var(--grad);
+    color: var(--darker);
+  }
+  .pilot .tag { color: rgba(14,13,12,.75); }
+  .pilot .tag::before { background: var(--darker); }
+  .pilot h2 { color: var(--darker); max-width: 16ch; }
+  .pilot .lede { color: rgba(14,13,12,.85); font-weight: 500; }
+
+  .pilot-terms {
+    margin-top: 34px; display: flex; flex-wrap: wrap; gap: 10px;
+  }
+  .pilot-terms span {
+    font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase;
+    border: 1.5px solid rgba(14,13,12,.55); padding: 9px 14px; color: var(--darker);
+  }
+
+  .signup { margin-top: 44px; max-width: 520px; }
+  .signup form { display: flex; flex-direction: column; gap: 12px; }
+  @media (min-width: 560px) { .signup form { flex-direction: row; } }
+  .signup input {
+    flex: 1; font-family: var(--mono); font-size: 15px;
+    padding: 16px 18px; border: 2px solid var(--darker);
+    background: var(--cream); color: var(--ink); outline: none; min-width: 0;
+  }
+  .signup input::placeholder { color: #8a8378; }
+  .signup .btn { white-space: nowrap; }
+  .signup .fine {
+    margin-top: 16px; font-size: 13.5px; color: rgba(14,13,12,.75); line-height: 1.5;
+  }
+  .signup .done {
+    display: none; border: 2px solid var(--darker); padding: 22px;
+    font-family: var(--mono); font-size: 14px; letter-spacing: .04em;
+  }
+  .signup.sent form, .signup.sent .fine { display: none; }
+  .signup.sent .done { display: block; }
+
+  /* ---------- footer ---------- */
+  footer {
+    background: var(--darker); border-top: 1px solid var(--line-d);
+    padding: 36px 0 calc(36px + env(safe-area-inset-bottom));
+  }
+  .foot-inner {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
+    color: var(--muted); text-transform: uppercase;
+  }
+  footer a { color: var(--cream-dim); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .hl > span, .hero p, .hero .btn { animation: none !important; transform: none !important; opacity: 1 !important; }
+    .rv { opacity: 1; transform: none; transition: none; }
+    .rec-dot::before { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap header-inner">
+    <a class="logo" href="#top">Munra<em>.</em>Field<sup>BETA</sup></a>
+    <a class="btn btn-light header-cta" href="#pilot">Sök pilotplats</a>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <p class="tag">För besiktningsmän</p>
+    <h1 aria-label="Rapporten är klar när du sätter dig i bilen.">
+      <span class="hl" aria-hidden="true"><span>Rapporten är klar</span></span>
+      <span class="hl" aria-hidden="true"><span>när du sätter dig</span></span>
+      <span class="hl" aria-hidden="true"><span>i bilen.</span></span>
+    </h1>
+    <p>Gå genom huset, prata om det du ser, fotografera — som vanligt. Munra Field lyssnar och bygger rapporten medan du jobbar.</p>
+    <a class="btn btn-light" href="#pilot">Sök pilotplats</a>
+  </div>
+  <div class="beams" aria-hidden="true"></div>
+</section>
+
+<!-- ============ PROBLEM ============ -->
+<section class="light s-pad problem">
+  <div class="blueprint" aria-hidden="true">
+    <svg viewBox="0 0 420 320" fill="none" stroke="#e25822" stroke-width="1" opacity=".35">
+      <!-- villa cross-section, blueprint style -->
+      <polyline points="20,150 210,40 400,150"/>
+      <rect x="50" y="150" width="320" height="130"/>
+      <line x1="50" y1="215" x2="370" y2="215"/>
+      <rect x="250" y="55" width="26" height="60"/>
+      <rect x="85" y="170" width="40" height="30"/>
+      <rect x="180" y="170" width="40" height="30"/>
+      <rect x="290" y="170" width="40" height="30"/>
+      <rect x="85" y="235" width="40" height="30"/>
+      <rect x="290" y="235" width="40" height="30"/>
+      <rect x="180" y="230" width="40" height="50"/>
+      <line x1="10" y1="280" x2="412" y2="280"/>
+      <line x1="50" y1="288" x2="370" y2="288" stroke-dasharray="4 5"/>
+      <line x1="50" y1="284" x2="50" y2="292"/>
+      <line x1="370" y1="284" x2="370" y2="292"/>
+      <polyline points="105,150 210,90 315,150" stroke-dasharray="3 5"/>
+      <text x="216" y="80" font-family="IBM Plex Mono, monospace" font-size="9" fill="#e25822" stroke="none" letter-spacing="2">TAK</text>
+      <text x="376" y="200" font-family="IBM Plex Mono, monospace" font-size="9" fill="#e25822" stroke="none" letter-spacing="2">FASAD</text>
+      <text x="56" y="304" font-family="IBM Plex Mono, monospace" font-size="9" fill="#e25822" stroke="none" letter-spacing="2">GRUND</text>
+    </svg>
+  </div>
+  <div class="wrap">
+    <p class="tag rv">Problemet</p>
+    <p class="accent-kicker rv" style="margin-top: 36px;">Tre till fem timmar per rapport. Två till fem rapporter i veckan. Räkna själv.</p>
+    <h2 class="rv rv2">Besiktningen tar två timmar. Skrivbordet tar resten av dagen.</h2>
+    <p class="lede rv rv3">Du har redan gjort jobbet ute i huset — sett, bedömt, dokumenterat. Sedan gör du om alltihop vid datorn. Munra Field flyttar inte skrivarbetet till ett formulär i mobilen. Det tar bort det.</p>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="dark-sec s-pad" style="background: var(--dark);">
+  <div class="wrap">
+    <p class="tag rv">Så fungerar det</p>
+    <h2 class="rv rv2" style="margin-top: 36px;">Du gör besiktningen. Munra gör pappersarbetet.</h2>
+
+    <div class="steps-grid">
+
+      <div class="step rv">
+        <div>
+          <p class="step-no">01</p>
+          <h3>Jobba som vanligt</h3>
+          <p>Gå genom huset i din egen ordning. Prata fritt om det du ser och fotografera det som ska med. Ingen padda att knappa i, inga menyer mitt i besöket.</p>
+        </div>
+        <div class="step-visual">
+          <div class="mock">
+            <div class="mock-head"><span>Pågående besiktning</span><span class="rec-dot">REC</span></div>
+            <div class="wave" aria-hidden="true">
+              <i></i><i></i><i></i><i></i><i></i><i class="hot"></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="hot"></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step rv">
+        <div>
+          <p class="step-no">02</p>
+          <h3>Munra lyssnar och strukturerar</h3>
+          <p>Dina observationer blir anmärkningar i rätt avsnitt medan du går. Foton kopplas till det du sa när du tog dem. Allt sker i bakgrunden.</p>
+        </div>
+        <div class="step-visual">
+          <div class="mock">
+            <div class="mock-head"><span>Rapport · byggs i realtid</span></div>
+            <div class="rep-row"><b>4.2</b><span>Vind — fuktfläckar på råspont vid genomföring</span></div>
+            <div class="rep-row"><b>3.1</b><span>Fasad — sprickbildning i puts, sydvästra hörnet</span></div>
+            <div class="rep-row"><b>6.4</b><span>Krypgrund — förhöjd fuktkvot i syll</span></div>
+            <div class="rep-row dim"><b>—</b><span>Lyssnar …</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step rv">
+        <div>
+          <p class="step-no">03</p>
+          <h3>Checklistan sköter sig själv</h3>
+          <p>En passiv checklista bockar av det du täckt och flaggar det som saknas — innan du lämnar huset. Den avbryter dig aldrig.</p>
+        </div>
+        <div class="step-visual">
+          <div class="mock">
+            <div class="mock-head"><span>Täckning</span><span>14 / 15</span></div>
+            <div class="chk-row"><span>Tak &amp; vind</span><span class="chk-ok">Klart</span></div>
+            <div class="chk-row"><span>Fasad</span><span class="chk-ok">Klart</span></div>
+            <div class="chk-row"><span>Våtrum</span><span class="chk-ok">Klart</span></div>
+            <div class="chk-row"><span>Krypgrund</span><span class="chk-warn">Saknas</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step rv">
+        <div>
+          <p class="step-no">04</p>
+          <h3>Granska i bilen</h3>
+          <p>När du sätter dig i bilen är utkastet komplett. Läs igenom, justera formuleringar, skicka. Det som tog en eftermiddag tar några minuter.</p>
+        </div>
+        <div class="step-visual">
+          <div class="mock">
+            <div class="mock-head"><span>Utkast klart</span><span style="color:#7fae6e;">✓ 11:54</span></div>
+            <div class="rep-row"><b>—</b><span>Sammanfattning &amp; riskanalys</span></div>
+            <div class="rep-row"><b>—</b><span>12 anmärkningar · 34 foton</span></div>
+            <div class="rep-row"><b>—</b><span>Granska &amp; signera</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ BIG NUMBERS ============ -->
+<section class="dark-sec" style="background: var(--darker);">
+  <div class="stats">
+    <div class="stat rv">
+      <div class="num">2–3<small> min</small></div>
+      <p class="lbl">Efterarbete per rapport — istället för 3–5 timmar</p>
+    </div>
+    <div class="stat rv">
+      <div class="num">1</div>
+      <p class="lbl">Klick från anmärkning till foto och talad observation</p>
+    </div>
+    <div class="stat rv">
+      <div class="num">0</div>
+      <p class="lbl">Nya moment under själva besiktningen</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRACEABILITY ============ -->
+<section class="light s-pad">
+  <div class="wrap">
+    <p class="tag rv">Spårbarhet</p>
+    <h2 class="rv rv2" style="margin-top: 36px;">Varje anmärkning kan visa var den kommer ifrån.</h2>
+    <p class="lede rv rv3">AI som skriver åt dig är värdelös om du inte kan lita på den. Därför är varje rad i rapporten klickbar — tillbaka till fotot och den talade observationen den bygger på. Du granskar inte en svart låda. Du granskar dig själv.</p>
+
+    <div class="trace rv">
+      <div class="trace-list" role="listbox" aria-label="Anmärkningar i rapporten">
+        <p class="trace-hint">Rapport · tryck på en anmärkning</p>
+        <button class="trace-item" role="option" aria-selected="true" data-i="0">
+          <span class="ref">4.2 · Vind</span>
+          Fuktfläckar på råspont vid genomföring
+        </button>
+        <button class="trace-item" role="option" aria-selected="false" data-i="1">
+          <span class="ref">3.1 · Fasad</span>
+          Sprickbildning i puts, sydvästra hörnet
+        </button>
+        <button class="trace-item" role="option" aria-selected="false" data-i="2">
+          <span class="ref">6.4 · Krypgrund</span>
+          Förhöjd fuktkvot i syll
+        </button>
+      </div>
+
+      <div class="trace-src" aria-live="polite">
+        <div class="src-photo">
+          <span class="stamp" id="src-stamp">FOTO · 10:42 · VIND</span>
+        </div>
+        <div class="src-quote">
+          <blockquote id="src-quote">”Här uppe på vinden har vi fuktfläckar på råsponten, runt genomföringen. Det tar vi med som anmärkning.”</blockquote>
+          <p class="meta"><span class="mini-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span> <span id="src-time">Röst · 10:42</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BROKERS ============ -->
+<section class="light s-pad broker" style="padding-top: 70px;">
+  <div class="wrap">
+    <p class="tag rv">Även för mäklaren</p>
+    <h2 class="rv rv2" style="margin-top: 36px; font-size: clamp(24px, 6vw, 40px);">Snabbare rapport, snabbare affär.</h2>
+    <div class="broker-grid rv rv2">
+      <div class="broker-cell">
+        <h4>Dokumenterad boarea</h4>
+        <p>Underlag som håller hela vägen till kontraktet.</p>
+      </div>
+      <div class="broker-cell">
+        <h4>Virtuell visning</h4>
+        <p>Materialet från besöket kan användas för att visa huset digitalt.</p>
+      </div>
+      <div class="broker-cell">
+        <h4>Kortare ledtid</h4>
+        <p>Rapport samma dag istället för i slutet av veckan.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="dark-sec s-pad" style="background: var(--dark);">
+  <div class="wrap">
+    <p class="tag rv">Raka svar</p>
+    <h2 class="rv rv2" style="margin-top: 36px;">Det du antagligen undrar.</h2>
+    <div class="faq-list rv rv3">
+      <details>
+        <summary>Måste jag ändra hur jag jobbar?</summary>
+        <p>Nej. Det är hela poängen. Du går, tittar, pratar och fotograferar precis som idag. Verktyget anpassar sig efter din rutin — inte tvärtom.</p>
+      </details>
+      <details>
+        <summary>Vad händer om den uppfattar fel?</summary>
+        <p>Du granskar allt innan något skickas, och varje anmärkning är spårbar till fotot och det du faktiskt sa. Fel är lätta att hitta och lätta att rätta — du behöver aldrig lita blint.</p>
+      </details>
+      <details>
+        <summary>Vems är rapporten?</summary>
+        <p>Din. Munra skriver utkastet, men du granskar, justerar och signerar. Ansvaret och innehållet är ditt, precis som idag.</p>
+      </details>
+      <details>
+        <summary>Behöver jag ny utrustning?</summary>
+        <p>Nej. Telefonen du redan har i fickan räcker.</p>
+      </details>
+      <details>
+        <summary>Vad kostar det?</summary>
+        <p>Under piloten: ingenting. Vi bygger produkten tillsammans med de första tio besiktningsmännen, och er tid och feedback är betalning nog.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PILOT CTA ============ -->
+<section class="pilot s-pad" id="pilot">
+  <div class="wrap">
+    <p class="tag rv">Betapilot</p>
+    <h2 class="rv rv2" style="margin-top: 36px;">Vi söker 10 besiktningsmän.</h2>
+    <p class="lede rv rv3">Munra Field är under utveckling. Innan vi släpper något vill vi bygga klart det tillsammans med folk som faktiskt gör jobbet. Är du SBR-besiktningsman med ett par villabesiktningar i veckan vill vi prata med dig.</p>
+
+    <div class="pilot-terms rv rv3">
+      <span>Gratis under piloten</span>
+      <span>10 platser</span>
+      <span>Du formar produkten</span>
+    </div>
+
+    <div class="signup rv rv3" id="signup">
+      <form id="pilot-form" novalidate>
+        <input type="email" id="email" name="email" inputmode="email" autocomplete="email"
+               placeholder="din@mejladress.se" required aria-label="Din mejladress">
+        <button class="btn btn-dark" type="submit">Jag är intresserad</button>
+      </form>
+      <p class="fine">Inget nyhetsbrev, ingen spam. Vi hör av oss personligen när piloten drar igång.</p>
+      <div class="done" role="status">✓ Tack. Vi hör av oss personligen.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span>Munra Field</span>
+    <a href="mailto:jon4than.berg@gmail.com">Kontakt</a>
+    <span>© 2026 Munra Health</span>
+  </div>
+</footer>
+
+<script>
+  // Hero text reveal
+  requestAnimationFrame(() => document.body.classList.add("loaded"));
+
+  // Scroll reveals
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.18, rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll(".rv").forEach(el => io.observe(el));
+
+  // Traceability demo
+  const sources = [
+    { stamp: "FOTO · 10:42 · VIND",
+      quote: "”Här uppe på vinden har vi fuktfläckar på råsponten, runt genomföringen. Det tar vi med som anmärkning.”",
+      time:  "Röst · 10:42" },
+    { stamp: "FOTO · 10:18 · FASAD",
+      quote: "”Sydvästra hörnet — sprickbildning i putsen, ser ut att följa sockeln. Vi noterar det och rekommenderar uppföljning.”",
+      time:  "Röst · 10:18" },
+    { stamp: "FOTO · 11:05 · KRYPGRUND",
+      quote: "”Nere i krypgrunden känns syllen fuktig, mätaren visar klart förhöjda värden. Det här blir en anmärkning.”",
+      time:  "Röst · 11:05" }
+  ];
+  const items = document.querySelectorAll(".trace-item");
+  items.forEach(btn => btn.addEventListener("click", () => {
+    items.forEach(b => b.setAttribute("aria-selected", "false"));
+    btn.setAttribute("aria-selected", "true");
+    const s = sources[+btn.dataset.i];
+    document.getElementById("src-stamp").textContent = s.stamp;
+    document.getElementById("src-quote").textContent = s.quote;
+    document.getElementById("src-time").textContent  = s.time;
+  }));
+
+  // Pilot signup.
+  // Sätt FORM_ENDPOINT till t.ex. en Formspree-URL för riktig insamling.
+  // Tills dess öppnas ett färdigt mejl som fallback.
+  const FORM_ENDPOINT = "";
+  const CONTACT = "jon4than.berg@gmail.com";
+
+  document.getElementById("pilot-form").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const input = document.getElementById("email");
+    const email = input.value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      input.focus();
+      input.style.borderColor = "#7a1f00";
+      return;
+    }
+    input.style.borderColor = "";
+
+    if (FORM_ENDPOINT) {
+      try {
+        await fetch(FORM_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({ email, source: "munra-field-landing" })
+        });
+        document.getElementById("signup").classList.add("sent");
+        return;
+      } catch (e) { /* fall through to mailto */ }
+    }
+    location.href = "mailto:" + CONTACT
+      + "?subject=" + encodeURIComponent("Intresseanmälan — Munra Field pilot")
+      + "&body=" + encodeURIComponent("Hej!\n\nJag är intresserad av pilotplats i Munra Field.\n\nMejl: " + email + "\n");
+    document.getElementById("signup").classList.add("sent");
+  });
+</script>
+</body>
+</html>
