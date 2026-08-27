@@ -384,13 +384,12 @@
       return;
     }
 
-    // Rör i trumhinnan → lokalbehandling
+    // Rör i trumhinnan → lokalbehandling, går före recidiv men tar med dess odling
     if (ror) {
-      setResult('yellow', 'LOKAL', 'RÖR I TRUMHINNAN',
-        komp.size
-          ? 'Lokalbehandling — ej perorala antibiotika · Överväg ÖNH-kontakt'
-          : 'Lokalbehandling — ej perorala antibiotika',
-        DOSE_TPB);
+      let action = 'Lokalbehandling — ej perorala antibiotika';
+      if (recidiv) action += ' · Recidiv — överväg odling från hörselgången';
+      if (komp.size) action += ' · Överväg ÖNH-kontakt';
+      setResult('yellow', 'LOKAL', 'RÖR I TRUMHINNAN', action, DOSE_TPB);
       return;
     }
 
