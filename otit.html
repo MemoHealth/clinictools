@@ -176,7 +176,7 @@
     <div class="check"><div class="check-mark"></div></div>
     <div class="crit-text">
       <div class="crit-label">Recidiv — ny otit inom 1 månad</div>
-      <div class="crit-detail">Med symtomfritt intervall sedan föregående</div>
+      <div class="crit-detail">Symtomfritt intervall sedan föregående · behandling och odling</div>
     </div>
   </div>
 
@@ -334,12 +334,12 @@
   }
 
   // Any complicating factor rules out active exspektans
-  function setKompResult(recidiv) {
+  function setKompResult() {
     setResult('green', 'ATB', 'KOMPLICERANDE FAKTOR',
       komp.has('ci')
         ? 'Exspektans olämplig — behandla och kontakta ÖNH (cochleaimplantat)'
         : 'Exspektans olämplig — behandla · Överväg ÖNH-kontakt',
-      recidiv ? DOSE_PCV_10 : DOSE_PCV);
+      DOSE_PCV);
   }
 
   function evaluate() {
@@ -394,17 +394,24 @@
       return;
     }
 
+    // Recidivotit → behandla + odla, oavsett ålder
+    if (recidiv) {
+      setResult('green', 'ATB', 'RECIDIVOTIT',
+        'Ny otit inom 1 månad — behandla och ta NPH-odling', DOSE_PCV_10);
+      return;
+    }
+
     if (age === 'u1') {
       setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT',
         'Barn < 1 år — alltid behandla' + (otorre ? ' · Otorré/perforation' : ''),
-        recidiv ? DOSE_PCV_10 : DOSE_PCV);
+        DOSE_PCV);
       return;
     }
 
     if (age === 'o12') {
       setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT',
         'Barn > 12 år — behandla som vuxen' + (otorre ? ' · Otorré/perforation' : ''),
-        recidiv ? DOSE_PCV_10 : DOSE_PCV);
+        DOSE_PCV);
       return;
     }
 
@@ -414,9 +421,9 @@
           bilateral  ? 'Bilateral AOM hos barn 1–2 år' :
           otorre     ? 'Otorré/perforation — behandla oavsett ålder' :
                        'Allmänpåverkan — behandla',
-          recidiv ? DOSE_PCV_10 : DOSE_PCV);
+          DOSE_PCV);
       } else if (komp.size) {
-        setKompResult(recidiv);
+        setKompResult();
       } else {
         setResult('yellow', 'EXSP', 'AKTIV EXSPEKTANS',
           'Unilateral AOM, opåverkad — exspektans möjlig', DOSE_EXSP, KOMP_HINT);
@@ -429,9 +436,9 @@
         setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT',
           otorre   ? 'Otorré/perforation — behandla oavsett ålder' :
                      'Allmänpåverkan — behandla',
-          recidiv ? DOSE_PCV_10 : DOSE_PCV);
+          DOSE_PCV);
       } else if (komp.size) {
-        setKompResult(recidiv);
+        setKompResult();
       } else {
         setResult('yellow', 'EXSP', 'AKTIV EXSPEKTANS',
           'Okomplicerad AOM 2–12 år — aktiv exspektans', DOSE_EXSP, KOMP_HINT);
