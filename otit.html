@@ -143,7 +143,7 @@
   <div class="criterion locked" data-id="otorre" id="crit-otorre">
     <div class="check"><div class="check-mark"></div></div>
     <div class="crit-text">
-      <div class="crit-label">Otorré</div>
+      <div class="crit-label">Otorré / perforerad trumhinna</div>
       <div class="crit-detail">Spontan perforation med flytning från örat</div>
     </div>
   </div>
@@ -220,13 +220,6 @@
       <button class="modal-close" id="kompClose">Klar</button>
     </div>
     <div class="modal-list" id="kompList">
-    <div class="criterion" data-komp="perforation" id="komp-perforation">
-      <div class="check"><div class="check-mark"></div></div>
-      <div class="crit-text">
-        <div class="crit-label">Perforerad trumhinna</div>
-        <div class="crit-detail">Perforation eller kvarstående flytning</div>
-      </div>
-    </div>
     <div class="criterion" data-komp="svarvark" id="komp-svarvark">
       <div class="check"><div class="check-mark"></div></div>
       <div class="crit-text">
@@ -304,9 +297,8 @@
   const backdropEl   = document.getElementById('kompBackdrop');
 
   // Complicating factors — stable display order
-  const KOMP_ORDER = ['perforation','svarvark','infektionskanslig','ci','horsel','opererad','fraktur','missbildning'];
+  const KOMP_ORDER = ['svarvark','infektionskanslig','ci','horsel','opererad','fraktur','missbildning'];
   const KOMP_LABELS = {
-    perforation:       'Perforerad trumhinna',
     svarvark:          'Svår värk trots analgetika',
     infektionskanslig: 'Infektionskänslig',
     ci:                'Cochleaimplantat',
@@ -416,7 +408,7 @@
       if (bilateral || otorre || paverkad) {
         setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT',
           bilateral  ? 'Bilateral AOM hos barn 1–2 år' :
-          otorre     ? 'Otorré — behandla oavsett ålder' :
+          otorre     ? 'Otorré/perforation — behandla oavsett ålder' :
                        'Allmänpåverkan — behandla',
           recidiv ? DOSE_PCV_10 : DOSE_PCV);
       } else if (komp.size) {
@@ -431,7 +423,7 @@
     if (age === '2to12') {
       if (otorre || paverkad) {
         setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT',
-          otorre   ? 'Otorré — behandla oavsett ålder' :
+          otorre   ? 'Otorré/perforation — behandla oavsett ålder' :
                      'Allmänpåverkan — behandla',
           recidiv ? DOSE_PCV_10 : DOSE_PCV);
       } else if (komp.size) {
