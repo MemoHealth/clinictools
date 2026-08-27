@@ -30,6 +30,8 @@
   .result-bar.yellow .result-label { color: #d97706; }
   .result-action { font-size: 13px; color: #3a3a3c; margin-top: 3px; line-height: 1.5; }
   .result-dose { font-size: 12px; color: #8e8e93; margin-top: 4px; line-height: 1.4; }
+  .result-note { font-size: 12px; color: #b45309; margin-top: 4px; line-height: 1.4; cursor: pointer; }
+  .result-note:empty { display: none; }
 
   /* Scroll content */
   .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 4px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -57,6 +59,30 @@
   .crit-label  { font-size: 14px; color: #1c1c1e; font-weight: 500; line-height: 1.3; flex: 1; }
   .crit-detail { font-size: 11px; color: #8e8e93; margin-top: 2px; }
 
+  /* Complicating-factor trigger */
+  .komp-btn { background: #fff; border: 1.5px solid #e5e5ea; border-radius: 14px; padding: 13px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; touch-action: pan-y; transition: background 120ms, border-color 120ms; }
+  .komp-btn.has-sel { background: #fff2f2; border-color: #ff3b30; }
+  .komp-btn .komp-icon { width: 28px; height: 28px; border-radius: 50%; background: #f2f2f7; color: #8e8e93; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; }
+  .komp-btn.has-sel .komp-icon { background: #ff3b30; color: #fff; }
+  .komp-btn .komp-text { flex: 1; }
+  .komp-btn .komp-label  { font-size: 14px; font-weight: 500; color: #1c1c1e; line-height: 1.3; }
+  .komp-btn .komp-detail { font-size: 11px; color: #8e8e93; margin-top: 2px; }
+  .komp-btn .komp-chevron { font-size: 17px; color: #c7c7cc; flex-shrink: 0; }
+
+  /* Complicating-factor sheet */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: flex-end; justify-content: center; z-index: 50; opacity: 0; transition: opacity 200ms; }
+  .modal-backdrop.open { opacity: 1; }
+  .modal-backdrop[hidden] { display: none; }
+  .modal { width: 100%; max-width: 560px; max-height: 88dvh; background: #f2f2f7; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); transform: translateY(14px); transition: transform 200ms; }
+  .modal-backdrop.open .modal { transform: translateY(0); }
+  .modal-grip { width: 38px; height: 5px; border-radius: 3px; background: #d1d1d6; margin: 8px auto 2px; flex-shrink: 0; }
+  .modal-head { display: flex; align-items: flex-start; gap: 12px; padding: 8px 16px 10px; flex-shrink: 0; }
+  .modal-head .modal-titles { flex: 1; }
+  .modal-title { font-size: 17px; font-weight: 600; }
+  .modal-sub   { font-size: 12px; color: #8e8e93; margin-top: 2px; line-height: 1.4; }
+  .modal-close { background: #007aff; color: #fff; border: none; border-radius: 10px; padding: 9px 16px; font-size: 14px; font-family: inherit; font-weight: 500; cursor: pointer; flex-shrink: 0; }
+  .modal-list { overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 0 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+
   .bottom-bar { flex-shrink: 0; padding: 6px 14px 10px; }
   .btn-reset { width: 100%; background: #fff; border: 1.5px solid #e5e5ea; color: #3a3a3c; border-radius: 11px; padding: 13px; font-size: 13px; font-family: inherit; cursor: pointer; }
   .disclaimer { flex-shrink: 0; padding: 0 14px 8px; font-size: 10px; color: #aeaeb2; text-align: center; line-height: 1.5; }
@@ -76,6 +102,7 @@
     <div class="result-label" id="resultLabel">VÄLJ ÅLDER</div>
     <div class="result-action" id="resultAction">—</div>
     <div class="result-dose" id="resultDose"></div>
+    <div class="result-note" id="resultNote"></div>
   </div>
 </div>
 
@@ -169,6 +196,88 @@
     </div>
   </div>
 
+  <div class="section-label">KOMPLICERANDE FAKTORER</div>
+
+  <div class="komp-btn" id="kompBtn">
+    <div class="komp-icon" id="kompIcon">!</div>
+    <div class="komp-text">
+      <div class="komp-label" id="kompBtnLabel">Komplicerande faktorer</div>
+      <div class="komp-detail" id="kompBtnDetail">Öppna listan — talar emot exspektans</div>
+    </div>
+    <div class="komp-chevron">›</div>
+  </div>
+
+</div>
+
+<div class="modal-backdrop" id="kompBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="kompTitle">
+    <div class="modal-grip"></div>
+    <div class="modal-head">
+      <div class="modal-titles">
+        <div class="modal-title" id="kompTitle">Komplicerande faktorer</div>
+        <div class="modal-sub">Minst en faktor → exspektans olämplig, behandla och överväg ÖNH-kontakt</div>
+      </div>
+      <button class="modal-close" id="kompClose">Klar</button>
+    </div>
+    <div class="modal-list" id="kompList">
+    <div class="criterion" data-komp="perforation" id="komp-perforation">
+      <div class="check"><div class="check-mark"></div></div>
+      <div class="crit-text">
+        <div class="crit-label">Perforerad trumhinna</div>
+        <div class="crit-detail">Perforation eller kvarstående flytning</div>
+      </div>
+    </div>
+    <div class="criterion" data-komp="svarvark" id="komp-svarvark">
+      <div class="check"><div class="check-mark"></div></div>
+      <div class="crit-text">
+        <div class="crit-label">Svår värk trots analgetika</div>
+        <div class="crit-detail">Otillräcklig effekt av paracetamol/ibuprofen</div>
+      </div>
+    </div>
+    <div class="criterion" data-komp="infektionskanslig" id="komp-infektionskanslig">
+      <div class="check"><div class="check-mark"></div></div>
+      <div class="crit-text">
+        <div class="crit-label">Infektionskänslig</div>
+        <div class="crit-detail">Immunbrist, immunsuppression, malignitet, Downs syndrom</div>
+      </div>
+    </div>
+    <div class="criterion" data-komp="ci" id="komp-ci">
+      <div class="check"><div class="check-mark"></div></div>
+      <div class="crit-text">
+        <div class="crit-label">Cochleaimplantat</div>
+        <div class="crit-detail">Ökad risk för meningit — kontakta ÖNH</div>
+      </div>
+    </div>
+    <div class="criterion" data-komp="horsel" id="komp-horsel">
+      <div class="check"><div class="check-mark"></div></div>
+      <div class="crit-text">
+        <div class="crit-label">Hörselnedsättning</div>
+        <div class="crit-detail">Känd nedsättning — även på det friska örat</div>
+      </div>
+    </div>
+    <div class="criterion" data-komp="opererad" id="komp-opererad">
+      <div class="check"><div class="check-mark"></div></div>
+      <div class="crit-text">
+        <div class="crit-label">Tidigare öronopererad</div>
+        <div class="crit-detail">Annan öronkirurgi än ventilationsrör</div>
+      </div>
+    </div>
+    <div class="criterion" data-komp="fraktur" id="komp-fraktur">
+      <div class="check"><div class="check-mark"></div></div>
+      <div class="crit-text">
+        <div class="crit-label">Tidigare temporalbensfraktur</div>
+        <div class="crit-detail">Skallbas-/tinningbensfraktur med öroninvolvering</div>
+      </div>
+    </div>
+    <div class="criterion" data-komp="missbildning" id="komp-missbildning">
+      <div class="check"><div class="check-mark"></div></div>
+      <div class="crit-text">
+        <div class="crit-label">Missbildning</div>
+        <div class="crit-detail">Kraniofacial missbildning, t.ex. gomspalt</div>
+      </div>
+    </div>
+    </div>
+  </div>
 </div>
 
 <div class="bottom-bar">
@@ -180,12 +289,39 @@
 (function() {
   let age = null;
   let mods = new Set();
+  let komp = new Set();
 
   const barEl    = document.getElementById('resultBar');
   const dotEl    = document.getElementById('resultDot');
   const lblEl    = document.getElementById('resultLabel');
   const actEl    = document.getElementById('resultAction');
   const doseEl   = document.getElementById('resultDose');
+  const noteEl   = document.getElementById('resultNote');
+
+  const kompBtnEl    = document.getElementById('kompBtn');
+  const kompIconEl   = document.getElementById('kompIcon');
+  const kompDetailEl = document.getElementById('kompBtnDetail');
+  const backdropEl   = document.getElementById('kompBackdrop');
+
+  // Complicating factors — stable display order
+  const KOMP_ORDER = ['perforation','svarvark','infektionskanslig','ci','horsel','opererad','fraktur','missbildning'];
+  const KOMP_LABELS = {
+    perforation:       'Perforerad trumhinna',
+    svarvark:          'Svår värk trots analgetika',
+    infektionskanslig: 'Infektionskänslig',
+    ci:                'Cochleaimplantat',
+    horsel:            'Hörselnedsättning',
+    opererad:          'Tidigare öronopererad',
+    fraktur:           'Tidigare temporalbensfraktur',
+    missbildning:      'Missbildning'
+  };
+  const KOMP_HINT = 'Komplicerande faktorer? Öppna listan ›';
+
+  function kompSelected() { return KOMP_ORDER.filter(id => komp.has(id)); }
+  function kompNote() {
+    const sel = kompSelected();
+    return sel.length ? 'Komplicerande: ' + sel.map(id => KOMP_LABELS[id]).join(' · ') : '';
+  }
 
   // Dose texts
   const DOSE_PCV       = 'PcV 25 mg/kg × 3 i 5 dygn (max 1,6 g × 3)';
@@ -194,12 +330,22 @@
   const DOSE_TPB       = 'Terracortril med Polymyxin B — 2–3 droppar × 3 i 7 dygn';
   const DOSE_EXSP      = 'Smärtstillande (paracetamol/ibuprofen) · Nässpray · Åter vid utebliven förbättring 2–3 dygn';
 
-  function setResult(type, dot, label, action, dose) {
+  function setResult(type, dot, label, action, dose, noteOverride) {
     barEl.className = 'result-bar ' + type;
     dotEl.textContent = dot;
     lblEl.textContent = label;
     actEl.textContent = action;
     doseEl.textContent = dose || '';
+    noteEl.textContent = noteOverride !== undefined ? noteOverride : kompNote();
+  }
+
+  // Any complicating factor rules out active exspektans
+  function setKompResult(recidiv) {
+    setResult('green', 'ATB', 'KOMPLICERANDE FAKTOR',
+      komp.has('ci')
+        ? 'Exspektans olämplig — behandla och kontakta ÖNH (cochleaimplantat)'
+        : 'Exspektans olämplig — behandla · Överväg ÖNH-kontakt',
+      recidiv ? DOSE_PCV_10 : DOSE_PCV);
   }
 
   function evaluate() {
@@ -209,6 +355,7 @@
       lblEl.textContent = 'VÄLJ ÅLDER';
       actEl.textContent = '—';
       doseEl.textContent = '';
+      noteEl.textContent = kompNote();
       return;
     }
 
@@ -245,7 +392,11 @@
 
     // Rör i trumhinnan → lokalbehandling
     if (ror) {
-      setResult('yellow', 'LOKAL', 'RÖR I TRUMHINNAN', 'Lokalbehandling — ej perorala antibiotika', DOSE_TPB);
+      setResult('yellow', 'LOKAL', 'RÖR I TRUMHINNAN',
+        komp.size
+          ? 'Lokalbehandling — ej perorala antibiotika · Överväg ÖNH-kontakt'
+          : 'Lokalbehandling — ej perorala antibiotika',
+        DOSE_TPB);
       return;
     }
 
@@ -268,9 +419,11 @@
           otorre     ? 'Otorré — behandla oavsett ålder' :
                        'Allmänpåverkan — behandla',
           recidiv ? DOSE_PCV_10 : DOSE_PCV);
+      } else if (komp.size) {
+        setKompResult(recidiv);
       } else {
         setResult('yellow', 'EXSP', 'AKTIV EXSPEKTANS',
-          'Unilateral AOM, opåverkad — exspektans möjlig', DOSE_EXSP);
+          'Unilateral AOM, opåverkad — exspektans möjlig', DOSE_EXSP, KOMP_HINT);
       }
       return;
     }
@@ -281,9 +434,11 @@
           otorre   ? 'Otorré — behandla oavsett ålder' :
                      'Allmänpåverkan — behandla',
           recidiv ? DOSE_PCV_10 : DOSE_PCV);
+      } else if (komp.size) {
+        setKompResult(recidiv);
       } else {
         setResult('yellow', 'EXSP', 'AKTIV EXSPEKTANS',
-          'Okomplicerad AOM 2–12 år — aktiv exspektans', DOSE_EXSP);
+          'Okomplicerad AOM 2–12 år — aktiv exspektans', DOSE_EXSP, KOMP_HINT);
       }
       return;
     }
@@ -318,13 +473,17 @@
     });
   });
 
-  // Modifier criteria — scroll-safe tap
-  document.querySelectorAll('.criterion').forEach(el => {
+  // Scroll-safe tap — ignores a press that turned into a scroll
+  function bindTap(el, fn) {
     let startY = 0, moved = false;
     el.addEventListener('pointerdown', e => { startY = e.clientY; moved = false; }, { passive: true });
     el.addEventListener('pointermove', e => { if (Math.abs(e.clientY - startY) > 10) moved = true; }, { passive: true });
-    el.addEventListener('pointerup', () => {
-      if (moved) return;
+    el.addEventListener('pointerup', () => { if (!moved) fn(); });
+  }
+
+  // Modifier criteria
+  document.querySelectorAll('.content .criterion').forEach(el => {
+    bindTap(el, () => {
       const id = el.dataset.id;
       if (mods.has(id)) { mods.delete(id); el.classList.remove('active'); }
       else              { mods.add(id);    el.classList.add('active'); }
@@ -332,13 +491,52 @@
     });
   });
 
+  // Complicating factors — sheet
+  function updateKompBtn() {
+    const sel = kompSelected();
+    kompBtnEl.classList.toggle('has-sel', sel.length > 0);
+    kompIconEl.textContent = sel.length ? String(sel.length) : '!';
+    kompDetailEl.textContent = sel.length
+      ? sel.map(id => KOMP_LABELS[id]).join(' · ')
+      : 'Öppna listan — talar emot exspektans';
+  }
+
+  let closeTimer = null;
+  function openKomp() {
+    if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    backdropEl.hidden = false;
+    requestAnimationFrame(() => backdropEl.classList.add('open'));
+  }
+  function closeKomp() {
+    backdropEl.classList.remove('open');
+    closeTimer = setTimeout(() => { backdropEl.hidden = true; closeTimer = null; }, 200);
+  }
+
+  bindTap(kompBtnEl, openKomp);
+  noteEl.addEventListener('click', openKomp);
+  document.getElementById('kompClose').addEventListener('click', closeKomp);
+  backdropEl.addEventListener('click', e => { if (e.target === backdropEl) closeKomp(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !backdropEl.hidden) closeKomp(); });
+
+  document.querySelectorAll('#kompList .criterion').forEach(el => {
+    bindTap(el, () => {
+      const id = el.dataset.komp;
+      if (komp.has(id)) { komp.delete(id); el.classList.remove('active'); }
+      else              { komp.add(id);    el.classList.add('active'); }
+      updateKompBtn();
+      evaluate();
+    });
+  });
+
   document.getElementById('resetBtn').addEventListener('click', () => {
-    age = null; mods.clear();
+    age = null; mods.clear(); komp.clear();
     document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.criterion').forEach(el => {
+    document.querySelectorAll('.content .criterion').forEach(el => {
       el.classList.remove('active');
       el.classList.add('locked');
     });
+    document.querySelectorAll('#kompList .criterion').forEach(el => el.classList.remove('active'));
+    updateKompBtn();
     evaluate();
   });
 

@@ -1,4 +1,4 @@
-const CACHE = 'klinik-v4';
+const CACHE = 'klinik-v5';
 const ASSETS = [
   './index.html',
   './tap-counter.html',
