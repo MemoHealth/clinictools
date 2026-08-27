@@ -147,7 +147,7 @@
 <script>
   // Register service worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./tapcount/sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
   document.addEventListener('gesturestart', e => e.preventDefault());
 </script>

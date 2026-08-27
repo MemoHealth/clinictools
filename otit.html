@@ -215,7 +215,7 @@
     <div class="modal-head">
       <div class="modal-titles">
         <div class="modal-title" id="kompTitle">Komplicerande faktorer</div>
-        <div class="modal-sub">Minst en faktor → exspektans olämplig, behandla och överväg ÖNH-kontakt</div>
+        <div class="modal-sub">Minst en faktor → exspektans olämplig, behandla och överväg ÖNH-kontakt · vid rör i trumhinnan gäller lokalbehandling</div>
       </div>
       <button class="modal-close" id="kompClose">Klar</button>
     </div>
@@ -312,7 +312,9 @@
   function kompSelected() { return KOMP_ORDER.filter(id => komp.has(id)); }
   function kompNote() {
     const sel = kompSelected();
-    return sel.length ? 'Komplicerande: ' + sel.map(id => KOMP_LABELS[id]).join(' · ') : '';
+    if (!sel.length) return '';
+    return 'Komplicerande: ' + sel.map(id => KOMP_LABELS[id]).join(' · ')
+      + (komp.has('ci') ? ' · Kontakta ÖNH' : '');
   }
 
   // Dose texts
@@ -495,21 +497,38 @@
       : 'Öppna listan — talar emot exspektans';
   }
 
+  const kompCloseEl = document.getElementById('kompClose');
+
   let closeTimer = null;
+  let lastFocus = null;
   function openKomp() {
     if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    lastFocus = document.activeElement;
     backdropEl.hidden = false;
-    requestAnimationFrame(() => backdropEl.classList.add('open'));
+    void backdropEl.offsetHeight;
+    requestAnimationFrame(() => {
+      backdropEl.classList.add('open');
+      kompCloseEl.focus();
+    });
   }
   function closeKomp() {
     backdropEl.classList.remove('open');
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
     closeTimer = setTimeout(() => { backdropEl.hidden = true; closeTimer = null; }, 200);
   }
 
   bindTap(kompBtnEl, openKomp);
   noteEl.addEventListener('click', openKomp);
-  document.getElementById('kompClose').addEventListener('click', closeKomp);
-  backdropEl.addEventListener('click', e => { if (e.target === backdropEl) closeKomp(); });
+  kompCloseEl.addEventListener('click', closeKomp);
+
+  // Stäng bara när tryckningen både börjar och slutar på bakgrunden, annars stängs
+  // panelen av ett drag som råkar släppa utanför
+  let pressedBackdrop = false;
+  backdropEl.addEventListener('pointerdown', e => { pressedBackdrop = e.target === backdropEl; }, { passive: true });
+  backdropEl.addEventListener('click', e => {
+    if (e.target === backdropEl && pressedBackdrop) closeKomp();
+    pressedBackdrop = false;
+  });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !backdropEl.hidden) closeKomp(); });
 
   document.querySelectorAll('#kompList .criterion').forEach(el => {
