@@ -388,7 +388,7 @@
     if (ror) {
       let action = 'Lokalbehandling — ej perorala antibiotika';
       if (recidiv) action += ' · Recidiv — överväg odling från hörselgången';
-      if (komp.size) action += ' · Överväg ÖNH-kontakt';
+      if (komp.size) action += komp.has('ci') ? ' · Kontakta ÖNH (cochleaimplantat)' : ' · Överväg ÖNH-kontakt';
       setResult('yellow', 'LOKAL', 'RÖR I TRUMHINNAN', action, DOSE_TPB);
       return;
     }
