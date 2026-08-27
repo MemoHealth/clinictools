@@ -266,7 +266,7 @@
       <div class="check"><div class="check-mark"></div></div>
       <div class="crit-text">
         <div class="crit-label">Missbildning</div>
-        <div class="crit-detail">Kraniofacial missbildning, t.ex. gomspalt</div>
+        <div class="crit-detail">Missbildning i ansiktsskelett (t.ex. gomspalt) eller inneröra</div>
       </div>
     </div>
     </div>
@@ -393,13 +393,15 @@
     }
 
     if (age === 'u1') {
-      setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT', 'Barn < 1 år — alltid behandla',
+      setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT',
+        'Barn < 1 år — alltid behandla' + (otorre ? ' · Otorré/perforation' : ''),
         recidiv ? DOSE_PCV_10 : DOSE_PCV);
       return;
     }
 
     if (age === 'o12') {
-      setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT', 'Barn > 12 år — behandla som vuxen',
+      setResult('green', 'ATB', 'ANTIBIOTIKA INDICERAT',
+        'Barn > 12 år — behandla som vuxen' + (otorre ? ' · Otorré/perforation' : ''),
         recidiv ? DOSE_PCV_10 : DOSE_PCV);
       return;
     }
@@ -444,10 +446,10 @@
       age = btn.dataset.age;
 
       // Lock/unlock modifiers by age
-      // < 1 år and > 12 år: only mastoid and ror relevant
+      // < 1 år and > 12 år: bilateral och allmänpåverkan styr inget — de får antibiotika ändå
       const allMods = ['bilateral','otorre','paverkad','mastoid','ror','recidiv','terapisvikt','otitbenaegna'];
       const ageSpecific = (age === 'u1' || age === 'o12')
-        ? ['mastoid','ror','recidiv','terapisvikt','otitbenaegna']
+        ? ['otorre','mastoid','ror','recidiv','terapisvikt','otitbenaegna']
         : ['bilateral','otorre','paverkad','mastoid','ror','recidiv','terapisvikt','otitbenaegna'];
 
       allMods.forEach(id => {
